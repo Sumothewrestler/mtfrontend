@@ -17,7 +17,7 @@ export default function TractorHours() {
   const [zoom, setZoom] = useState(100)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/tractors/list/')
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tractors/list/`)
       .then(response => response.json())
       .then(data => setTractors(data))
   }, [])
@@ -48,7 +48,7 @@ export default function TractorHours() {
       };
   
       console.log('Submitting tractor hours:', JSON.stringify(submissionData, null, 2))
-      const response = await fetch('http://localhost:8000/api/tractor-hours/submit/', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tractor-hours/submit/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,11 @@ export default function TractorHours() {
       alert('Tractor hours submitted successfully!')
     } catch (error) {
       console.error('Error submitting tractor hours:', error)
-      alert(`Failed to submit tractor hours. Error: ${error.message}`)
+      if (error instanceof Error) {
+        alert(`Failed to submit tractor hours. Error: ${error.message}`)
+      } else {
+        alert('Failed to submit tractor hours. An unknown error occurred.')
+      }
     }
   }
 

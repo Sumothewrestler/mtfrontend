@@ -22,7 +22,7 @@ export default function TotalCustomerOutstanding() {
     setIsLoading(true)
     setError(null)
     try {
-      const url = `http://localhost:8000/api/total-customer-outstanding/?asOnDate=${asOnDate}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}total-customer-outstanding/?asOnDate=${asOnDate}`;
       console.log('Fetching report from:', url);
       
       const response = await fetch(url);
@@ -40,7 +40,11 @@ export default function TotalCustomerOutstanding() {
       setOutstandingData(data);
     } catch (error) {
       console.error('Error fetching total customer outstanding:', error);
-      setError(`Failed to generate report. Error: ${error.message}`);
+      if (error instanceof Error) {
+        setError(`Failed to generate report. Error: ${error.message}`);
+      } else {
+        setError('Failed to generate report. An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false)
     }

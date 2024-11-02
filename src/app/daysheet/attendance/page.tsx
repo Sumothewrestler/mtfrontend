@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Home, Database, FileText, Calendar, Moon, Sun, ZoomIn, ZoomOut, Check, X } from 'lucide-react'
 
@@ -23,15 +23,11 @@ export default function Attendance() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [zoom, setZoom] = useState(100)
 
-  useEffect(() => {
-    fetchEmployees()
-  }, [])
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setIsLoading(true)
     try {
       console.log('Fetching employees...')
-      const response = await fetch('http://localhost:8000/api/employees/list/')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employees/list/`)
       console.log('Response status:', response.status)
       if (!response.ok) {
         throw new Error(`Failed to fetch employees: ${response.status} ${response.statusText}`)
@@ -42,11 +38,15 @@ export default function Attendance() {
       initializeAttendance(data)
     } catch (error) {
       console.error('Error fetching employees:', error)
-      setError(`Failed to load employees. Error: ${error.message}`)
+      setError(`Failed to load employees. Error: ${(error as Error).message}`)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchEmployees()
+  }, [fetchEmployees])
 
   const initializeAttendance = (employeeList: Employee[]) => {
     const initialAttendance: {[key: number]: AttendanceRecord} = {}
@@ -84,7 +84,7 @@ export default function Attendance() {
         }, {} as Record<string, { present: boolean; description: string }>)
       };
       console.log('Submitting attendance:', JSON.stringify(submissionData, null, 2))
-      const response = await fetch('http://localhost:8000/api/attendance/submit/', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}attendance/submit/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export default function Attendance() {
       alert('Attendance submitted successfully!')
     } catch (error) {
       console.error('Error submitting attendance:', error)
-      alert(`Failed to submit attendance. Error: ${error.message}`)
+      alert(`Failed to submit attendance. Error: ${(error as Error).message}`)
     }
   }
 

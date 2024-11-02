@@ -29,7 +29,7 @@ export default function TractorHoursReport() {
     setIsLoading(true)
     setError(null)
     try {
-      const url = `http://localhost:8000/api/tractor-hours-report/?month=${month}&year=${year}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}tractor-hours-report/?month=${month}&year=${year}`;
       console.log('Fetching report from:', url);
       
       const response = await fetch(url);
@@ -49,7 +49,11 @@ export default function TractorHoursReport() {
       setTractors(data.tractors);
     } catch (error) {
       console.error('Error fetching tractor hours report:', error);
-      setError(`Failed to generate report. Error: ${error.message}`);
+      if (error instanceof Error) {
+        setError(`Failed to generate report. Error: ${error.message}`);
+      } else {
+        setError('Failed to generate report. An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false)
     }

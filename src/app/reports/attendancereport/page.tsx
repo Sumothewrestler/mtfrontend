@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Home, Database, FileText, Calendar, Moon, Sun, ZoomIn, ZoomOut } from 'lucide-react'
 
@@ -29,7 +29,7 @@ export default function AttendanceReport() {
     setIsLoading(true)
     setError(null)
     try {
-      const url = `http://localhost:8000/api/attendance-report/?month=${month}&year=${year}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}attendance-report/?month=${month}&year=${year}`;
       console.log('Fetching report from:', url);
       
       const response = await fetch(url);
@@ -48,7 +48,11 @@ export default function AttendanceReport() {
       setEmployees(data.employees);
     } catch (error) {
       console.error('Error fetching attendance report:', error);
-      setError(`Failed to fetch attendance report. Error: ${error.message}`);
+      if (error instanceof Error) {
+        setError(`Failed to fetch attendance report. Error: ${error.message}`);
+      } else {
+        setError('Failed to fetch attendance report. An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false)
     }

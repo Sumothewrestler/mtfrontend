@@ -23,7 +23,7 @@ export default function SalesReport() {
     setIsLoading(true)
     setError(null)
     try {
-      const url = `http://localhost:8000/api/sales-report/?fromDate=${fromDate}&toDate=${toDate}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}sales-report/?fromDate=${fromDate}&toDate=${toDate}`;
       console.log('Fetching report from:', url);
       
       const response = await fetch(url);
@@ -42,7 +42,11 @@ export default function SalesReport() {
       setSalesData(data);
     } catch (error) {
       console.error('Error fetching sales data:', error);
-      setError(`Failed to generate report. Error: ${error.message}`);
+      if (error instanceof Error) {
+        setError(`Failed to generate report. Error: ${error.message}`);
+      } else {
+        setError('Failed to generate report. An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false)
     }

@@ -26,7 +26,7 @@ export default function CreateCustomer() {
     setErrorMessage(""); // Reset the error message
   
     try {
-      const response = await fetch("http://localhost:8000/api/customers/", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}customers/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

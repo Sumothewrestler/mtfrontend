@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -26,7 +26,7 @@ type Job = {
   totalLoad: number
   loadRate: number
   loadAmount: number
-  employees: {[key: string]: number}
+  employees: {[key: string]: number | string}
   description: string
 }
 
@@ -43,9 +43,9 @@ export default function AddJob() {
     const fetchData = async () => {
       try {
         const [customersResponse, tractorsResponse, employeesResponse] = await Promise.all([
-          fetch('http://localhost:8000/api/customers/list/'),
-          fetch('http://localhost:8000/api/tractors/list/'),
-          fetch('http://localhost:8000/api/employees/list/')
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}customers/list/`),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tractors/list/`),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employees/list/`)
         ]);
 
         if (!customersResponse.ok) throw new Error('Failed to fetch customers');
@@ -74,7 +74,7 @@ export default function AddJob() {
     fetchData();
   }, []);
 
-  const handleSubmit = async  (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const submissionData = {
@@ -88,7 +88,7 @@ export default function AddJob() {
           load_amount: job.loadAmount,
           description: job.description,
           employee_jobs: Object.entries(job.employees)
-            .filter(([_, loadingCharge]) => loadingCharge !== null && loadingCharge !== '')
+            .filter(([, loadingCharge]) => loadingCharge !== null && loadingCharge !== 0 && loadingCharge !== '')
             .map(([employeeName, loadingCharge]) => ({
               employee: employeeName,
               loading_charge: parseFloat(loadingCharge as string)
@@ -98,7 +98,7 @@ export default function AddJob() {
 
       console.log('Submitting jobs:', JSON.stringify(submissionData, null, 2));
 
-      const response = await fetch('http://localhost:8000/api/jobs/submit/', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}jobs/submit/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export default function AddJob() {
       setJobs([]);
     } catch (error) {
       console.error('Error submitting jobs:', error);
-      alert(`Failed to submit jobs. Error: ${error.message}`);
+      alert(`Failed to submit jobs. Error: ${(error as Error).message}`);
     }
   };
 
@@ -144,7 +144,7 @@ export default function AddJob() {
     setJobs(jobs.filter(job => job.id !== id));
   };
 
-  const updateJob = (id: number, field: string, value: any) => {
+  const updateJob = (id: number, field: keyof Job, value: Job[keyof Job]) => {
     setJobs(jobs.map(job => {
       if (job.id === id) {
         const updatedJob = { ...job, [field]: value };
@@ -305,6 +305,7 @@ export default function AddJob() {
                         isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300 text-gray-900'
                       }`}
                     />
+                  
                   </div>
                   <div>
                     <label htmlFor={`loadAmount-${job.id}`} className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -34,7 +34,8 @@ export default function CreateEmployee() {
       })
 
       if (response.ok) {
-        const data = await response.json()
+        // We're not using the response data, so we can remove the assignment
+        await response.json()
         setSuccessMessage('Employee created successfully!')
         setFormData({ name: '', role: '', phone_number: '', date_of_joining: '' })
       } else {
@@ -64,12 +65,12 @@ export default function CreateEmployee() {
       </header>
       <main className="container mx-auto px-4 py-12">
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded" role="alert">
             {successMessage}
           </div>
         )}
         {errorMessage && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded" role="alert">
             {errorMessage}
           </div>
         )}

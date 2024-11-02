@@ -29,7 +29,7 @@ export default function ReceiptEntry() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/customers/list/')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}customers/list/`)
       if (!response.ok) {
         throw new Error('Failed to fetch customers')
       }
@@ -47,7 +47,7 @@ export default function ReceiptEntry() {
     setError(null)
 
     try {
-      const response = await fetch('http://localhost:8000/api/receipts/', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}receipts/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -40,7 +40,7 @@ export default function CustomerLedger() {
       }
       const data = await response.json()
       setCustomers(data)
-    } catch  (error) {
+    } catch (error) {
       console.error('Error fetching customers:', error)
       setError('Failed to load customers. Please try again later.')
     }
@@ -50,7 +50,7 @@ export default function CustomerLedger() {
     setIsLoading(true)
     setError(null)
     try {
-      const url = `http://localhost:8000/api/customer-ledger/?customerId=${selectedCustomer}&fromDate=${fromDate}&toDate=${toDate}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}customer-ledger/?customerId=${selectedCustomer}&fromDate=${fromDate}&toDate=${toDate}`;
       console.log('Fetching report from:', url);
       
       const response = await fetch(url);
@@ -69,7 +69,11 @@ export default function CustomerLedger() {
       setOpeningBalance(data.openingBalance);
     } catch (error) {
       console.error('Error fetching customer ledger:', error);
-      setError(`Failed to generate report. Error: ${error.message}`);
+      if (error instanceof Error) {
+        setError(`Failed to generate report. Error: ${error.message}`);
+      } else {
+        setError('Failed to generate report. An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false)
     }
@@ -239,6 +243,7 @@ export default function CustomerLedger() {
                           <td className={`py-2 px-4 whitespace-nowrap text-sm text-right ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{entry.amount_cr.toFixed(2)}</td>
                           <td className={`py-2 px-4 whitespace-nowrap text-sm text-right ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{entry.amount_dr.toFixed(2)}</td>
                           <td className={`py-2 px-4 whitespace-nowrap text-sm text-right ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            
                             {Math.abs(runningBalance).toFixed(2)} {runningBalance >= 0 ? 'Dr' : 'Cr'}
                           </td>
                         </tr>
