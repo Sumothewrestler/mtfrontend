@@ -1,13 +1,8 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ArrowRight, HomeIcon, Database, FileText, Calendar, Moon, Sun, ZoomIn, ZoomOut, DollarSign, CreditCard } from 'lucide-react'
+import { Calendar, FileText, Database, Moon, Sun, DollarSign, TrendingUp, Home } from 'lucide-react'
 import Link from 'next/link'
-
-interface SalesData {
-  date: string
-  amount: number
-}
 
 interface Section {
   title: string
@@ -16,202 +11,147 @@ interface Section {
   icon: React.ElementType
 }
 
+interface DashboardData {
+  previous_day_sales: number
+  last_7_days_avg_sales: number
+}
+
 export default function Dashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [zoom, setZoom] = useState(100)
-  const [salesData, setSalesData] = useState<SalesData[]>([])
-  const [totalSales, setTotalSales] = useState(0)
-  const [totalOutstanding, setTotalOutstanding] = useState(0)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
 
-  const sections: Section[] = [
+  const bottomNavSections: Section[] = [
+    { title: 'Home', href: '/', color: 'bg-gray-500', icon: Home },
     { title: 'Day Sheet', href: '/daysheet/daysheetmain', color: 'bg-emerald-500', icon: Calendar },
     { title: 'Reports', href: '/reports/reportsmain', color: 'bg-blue-500', icon: FileText },
     { title: 'Masters', href: '/masters/mastermain', color: 'bg-purple-500', icon: Database },
   ]
 
-  useEffect(() => {
-    // Placeholder for data fetching
-    // You can implement the actual data fetching logic here when the backend is ready
-    const mockFetchData = () => {
-      setSalesData([
-        { date: '2023-05-01', amount: 1000 },
-        { date: '2023-05-02', amount: 1200 },
-        { date: '2023-05-03', amount: 800 },
-        { date: '2023-05-04', amount: 1500 },
-        { date: '2023-05-05', amount: 1100 },
-        { date: '2023-05-06', amount: 900 },
-        { date: '2023-05-07', amount: 1300 },
-      ])
-      setTotalSales(7800)
-      setTotalOutstanding(2500)
+  const buttonContainers = [
+    {
+      title: 'Daily Tasks',
+      gradient: 'from-blue-500 via-purple-500 to-purple-600',
+      buttons: [
+        { title: 'Attendance', href: '/daysheet/attendance' },
+        { title: 'Follow Up', href: '/daysheet/followup/view' },
+      ]
+    },
+    {
+      title: 'Job Management',
+      gradient: 'from-emerald-400 via-teal-500 to-green-600',
+      buttons: [
+        { title: 'Add Job', href: '/daysheet/jobsubmit' },
+        { title: 'Receipt', href: '/daysheet/receiptentry' },
+      ]
+    },
+    {
+      title: 'Financial',
+      gradient: 'from-orange-400 via-amber-500 to-yellow-500',
+      buttons: [
+        { title: 'Expense', href: '/daysheet/addexpense' },
+        { title: 'Payment', href: '/daysheet/paymententry' },
+      ]
     }
+  ]
 
-    mockFetchData()
-  }, [])
-
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50))
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}dashboard/`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error('Error fetching dashboard data:', error.message);
+        } else {
+          console.error('Unexpected error:', error);
+        }
+      }
+    };
+  
+    fetchDashboardData();
+  }, []);
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`} style={{ fontSize: `${zoom}%` }}>
-      {/* Sidebar */}
-      <div className={`w-64 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-        <div className="p-6">
-          <h1 className={`text-2xl font-semibold mb-6 ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>Metro Transports</h1>
-          <nav>
-            <Link href="/" className={`flex items-center py-3 px-4 rounded transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-200'}`}>
-              <HomeIcon className="mr-3" size={20} />
-              Homepage
-            </Link>
-            {sections.map((section) => (
-              <Link 
-                key={section.title}
-                href={section.href} 
-                className={`flex items-center py-3 px-4 rounded transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-200'}`}
-              >
-                <section.icon className="mr-3" size={20} />
-                {section.title}
-              </Link>
-            ))}
-          </nav>
+    <div className={`flex flex-col min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
+            METRO TRANSPORTS
+          </h1>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+            aria-label="Toggle dark mode"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm flex justify-end items-center px-6 py-4`}>
-          <div className="flex items-center space-x-4">
-            <button onClick={handleZoomOut} className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-800'}`}>
-              <ZoomOut size={20} />
-            </button>
-            <button onClick={handleZoomIn} className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-800'}`}>
-              <ZoomIn size={20} />
-            </button>
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+            <h3 className="text-xl font-semibold mb-2 flex items-center">
+              <DollarSign className="mr-2" />
+              Previous Day Sales
+            </h3>
+            <p className="text-3xl font-bold">
+              ₹{dashboardData?.previous_day_sales.toFixed(2) || '0.00'}
+            </p>
+          </div>
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+            <h3 className="text-xl font-semibold mb-2 flex items-center">
+              <TrendingUp className="mr-2" />
+              Last 7 Days Avg Sales
+            </h3>
+            <p className="text-3xl font-bold">
+              ₹{dashboardData?.last_7_days_avg_sales.toFixed(2) || '0.00'}
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6 max-w-lg mx-auto">
+          {buttonContainers.map((container, containerIndex) => (
+            <div
+              key={container.title}
+              className={`bg-gradient-to-br ${container.gradient} rounded-2xl shadow-xl p-4 backdrop-blur-sm`}
             >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-          </div>
-        </header>
-
-        <main className="p-6">
-          <h2 className={`text-2xl font-semibold mb-8 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'} text-center`}>Dashboard</h2>
-          
-          {/* Day Sheet, Reports, Masters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {sections.map((section) => (
-              <Link
-                key={section.title}
-                href={section.href}
-                className={`${section.color} rounded-xl shadow-lg p-6 text-white transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl`}
-              >
-                <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-                <div className="flex items-center mt-4">
-                  <span className="text-sm">View details</span>
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Total Sales and Total Outstanding */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className={`rounded-lg shadow-md p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Total Sales (Current Month)</h3>
-                <DollarSign className="h-5 w-5 text-green-500" />
+              <div className="grid grid-cols-2 gap-3">
+                {container.buttons.map((button, buttonIndex) => (
+                  <Link
+                    key={button.title}
+                    href={button.href}
+                    className={`${isDarkMode ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-white/90 border-white/40 text-gray-800 hover:bg-white'} border-2 rounded-xl shadow-md p-3 text-center transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm`}
+                  >
+                    <span className="text-sm font-semibold tracking-wide">{button.title}</span>
+                  </Link>
+                ))}
               </div>
-              <p className="text-2xl font-bold">${totalSales.toFixed(2)}</p>
             </div>
-            <div className={`rounded-lg shadow-md p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Total Outstanding</h3>
-                <CreditCard className="h-5 w-5 text-red-500" />
-              </div>
-              <p className="text-2xl font-bold">${totalOutstanding.toFixed(2)}</p>
-            </div>
-          </div>
+          ))}
+        </div>
+      </main>
 
-          {/* Sales Chart */}
-          <div className={`mb-8 rounded-lg shadow-md p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h3 className="text-lg font-semibold mb-4">Last 7 Days Sales</h3>
-            <div className="h-[300px] w-full">
-              <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none">
-                {/* X and Y axes */}
-                <line x1="50" y1="250" x2="750" y2="250" stroke={isDarkMode ? "#4B5563" : "#E5E7EB"} strokeWidth="2" />
-                <line x1="50" y1="250" x2="50" y2="50" stroke={isDarkMode ? "#4B5563" : "#E5E7EB"} strokeWidth="2" />
-
-                {/* Sales data line */}
-                {salesData.length > 0 && (
-                  <polyline
-                    points={salesData.map((data, index) => {
-                      const x = 50 + (index * 700) / (salesData.length - 1);
-                      const y = 250 - (data.amount / Math.max(...salesData.map(d => d.amount))) * 200;
-                      return `${x},${y}`;
-                    }).join(' ')}
-                    fill="none"
-                    stroke="#8B5CF6"
-                    strokeWidth="2"
-                  />
-                )}
-
-                {/* Data points */}
-                {salesData.map((data, index) => {
-                  const x = 50 + (index * 700) / (salesData.length - 1);
-                  const y = 250 - (data.amount / Math.max(...salesData.map(d => d.amount))) * 200;
-                  return (
-                    <circle
-                      key={index}
-                      cx={x}
-                      cy={y}
-                      r="4"
-                      fill="#8B5CF6"
-                    />
-                  );
-                })}
-
-                {/* X-axis labels */}
-                {salesData.map((data, index) => {
-                  const x = 50 + (index * 700) / (salesData.length - 1);
-                  return (
-                    <text
-                      key={index}
-                      x={x}
-                      y="270"
-                      textAnchor="middle"
-                      fontSize="12"
-                      fill={isDarkMode ? "#9CA3AF" : "#4B5563"}
-                    >
-                      {new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </text>
-                  );
-                })}
-
-                {/* Y-axis labels */}
-                {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
-                  const y = 250 - ratio * 200;
-                  const value = Math.max(...salesData.map(d => d.amount)) * ratio;
-                  return (
-                    <text
-                      key={index}
-                      x="40"
-                      y={y}
-                      textAnchor="end"
-                      alignmentBaseline="middle"
-                      fontSize="12"
-                      fill={isDarkMode ? "#9CA3AF" : "#4B5563"}
-                    >
-                      ${value.toFixed(0)}
-                    </text>
-                  );
-                })}
-              </svg>
-            </div>
-          </div>
-        </main>
-      </div>
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="flex justify-around items-center h-16">
+          {bottomNavSections.map((section) => (
+            <Link
+              key={section.title}
+              href={section.href}
+              className="relative flex flex-col items-center justify-center w-full h-full"
+            >
+              <div className={`absolute inset-0 ${section.color} opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-10`}></div>
+              <section.icon size={24} className={`mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} group-hover:text-opacity-100`} />
+              <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} group-hover:text-opacity-100`}>{section.title}</span>
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }
