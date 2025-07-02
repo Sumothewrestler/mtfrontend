@@ -15,6 +15,8 @@ export default function Page() {
     role: 'Driver',
     phone_number: '',
     date_of_joining: '',
+    daily_wage: '',
+    daily_beta: '',
     is_active: true
   })
   const [isLoading, setIsLoading] = useState(true)
@@ -44,6 +46,8 @@ export default function Page() {
         role: data.role,
         phone_number: data.phone_number,
         date_of_joining: data.date_of_joining ? data.date_of_joining.split('T')[0] : '',
+        daily_wage: data.daily_wage || '',
+        daily_beta: data.daily_beta || '',
         is_active: data.is_active
       })
     } catch (error) {
@@ -227,6 +231,52 @@ export default function Page() {
                     id="date_of_joining"
                     name="date_of_joining"
                     value={employeeData.date_of_joining}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-2 rounded-md border ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label 
+                    htmlFor="daily_wage" 
+                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Daily Wage (₹)
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    id="daily_wage"
+                    name="daily_wage"
+                    value={employeeData.daily_wage}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-2 rounded-md border ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label 
+                    htmlFor="daily_beta" 
+                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Daily Beta (₹)
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    id="daily_beta"
+                    name="daily_beta"
+                    value={employeeData.daily_beta}
                     onChange={handleChange}
                     required
                     className={`w-full px-4 py-2 rounded-md border ${

@@ -12,6 +12,8 @@ export default function Page() {
     role: '',
     phone_number: '',
     date_of_joining: '',
+    daily_wage: '',
+    daily_beta: '',
     is_active: true,
   })
   const [successMessage, setSuccessMessage] = useState('')
@@ -44,7 +46,7 @@ export default function Page() {
       if (response.ok) {
         await response.json()
         setSuccessMessage('Employee created successfully!')
-        setFormData({ name: '', role: '', phone_number: '', date_of_joining: '', is_active: true })
+        setFormData({ name: '', role: '', phone_number: '', date_of_joining: '', daily_wage: '', daily_beta: '', is_active: true })
         
         setTimeout(() => {
           router.push('/masters/employee/view')
@@ -155,6 +157,40 @@ export default function Page() {
               id="date_of_joining"
               name="date_of_joining"
               value={formData.date_of_joining}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'
+              }`}
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="daily_wage" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Daily Wage (₹)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              id="daily_wage"
+              name="daily_wage"
+              value={formData.daily_wage}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'
+              }`}
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="daily_beta" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Daily Beta (₹)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              id="daily_beta"
+              name="daily_beta"
+              value={formData.daily_beta}
               onChange={handleChange}
               required
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${

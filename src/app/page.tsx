@@ -48,7 +48,7 @@ export default function Dashboard() {
       title: 'Financial',
       gradient: 'from-orange-400 via-amber-500 to-yellow-500',
       buttons: [
-        { title: 'Expense', href: '/daysheet/addexpense' },
+        { title: 'Expense', href: '/accounts/dailyentry' },
         { title: 'Payment', href: '/daysheet/paymententry' },
       ]
     }
@@ -116,13 +116,13 @@ export default function Dashboard() {
         </div>
         
         <div className="grid grid-cols-1 gap-6 max-w-lg mx-auto">
-          {buttonContainers.map((container, containerIndex) => (
+          {buttonContainers.map((container) => (
             <div
               key={container.title}
               className={`bg-gradient-to-br ${container.gradient} rounded-2xl shadow-xl p-4 backdrop-blur-sm`}
             >
               <div className="grid grid-cols-2 gap-3">
-                {container.buttons.map((button, buttonIndex) => (
+                {container.buttons.map((button) => (
                   <Link
                     key={button.title}
                     href={button.href}

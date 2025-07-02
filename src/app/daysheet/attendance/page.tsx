@@ -62,44 +62,40 @@ export default function Attendance() {
       const existingAttendance = await response.json()
       
       // Reset all employees to 'not-entered' first, then update with existing data
-      setAttendance(prevAttendance => {
-        const updatedAttendance: { [key: number]: AttendanceRecord } = {}
-        
-        // First, initialize all filtered employees to 'not-entered'
-        filteredEmployees.forEach(employee => {
-          updatedAttendance[employee.id] = { 
-            status: 'not-entered', 
-            description: '' 
-          }
-        })
-        
-        // Then, update with existing data from the API
-        Object.keys(existingAttendance).forEach(employeeId => {
-          const id = parseInt(employeeId)
-          // Only update if this employee is in our filtered list
-          if (updatedAttendance[id]) {
-            updatedAttendance[id] = {
-              status: existingAttendance[employeeId].status as AttendanceStatus,
-              description: existingAttendance[employeeId].description || ''
-            }
-          }
-        })
-        
-        return updatedAttendance
+      const updatedAttendance: { [key: number]: AttendanceRecord } = {}
+      
+      // First, initialize all filtered employees to 'not-entered'
+      filteredEmployees.forEach(employee => {
+        updatedAttendance[employee.id] = { 
+          status: 'not-entered', 
+          description: '' 
+        }
       })
+      
+      // Then, update with existing data from the API
+      Object.keys(existingAttendance).forEach(employeeId => {
+        const id = parseInt(employeeId)
+        // Only update if this employee is in our filtered list
+        if (updatedAttendance[id]) {
+          updatedAttendance[id] = {
+            status: existingAttendance[employeeId].status as AttendanceStatus,
+            description: existingAttendance[employeeId].description || ''
+          }
+        }
+      })
+      
+      setAttendance(updatedAttendance)
     } catch (error) {
       console.error('Error fetching attendance by date:', error)
       // Reset to 'not-entered' for all employees if there's an error
-      setAttendance(prevAttendance => {
-        const resetAttendance: { [key: number]: AttendanceRecord } = {}
-        filteredEmployees.forEach(employee => {
-          resetAttendance[employee.id] = { 
-            status: 'not-entered', 
-            description: '' 
-          }
-        })
-        return resetAttendance
+      const resetAttendance: { [key: number]: AttendanceRecord } = {}
+      filteredEmployees.forEach(employee => {
+        resetAttendance[employee.id] = { 
+          status: 'not-entered', 
+          description: '' 
+        }
       })
+      setAttendance(resetAttendance)
     }
   }, [filteredEmployees])
 

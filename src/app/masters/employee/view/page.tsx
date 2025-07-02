@@ -23,6 +23,8 @@ interface Employee {
   role: string
   phone_number: string
   date_of_joining: string
+  daily_wage: number
+  daily_beta: number
   is_active: boolean
 }
 
@@ -280,6 +282,12 @@ export default function Page() {
                       Phone
                     </th>
                     <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                      Daily Wage
+                    </th>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                      Daily Beta
+                    </th>
+                    <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Joining Date
                     </th>
                     <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
@@ -309,6 +317,12 @@ export default function Page() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {employee.phone_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        ₹{employee.daily_wage}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        ₹{employee.daily_beta}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {formatDate(employee.date_of_joining)}
@@ -433,6 +447,14 @@ export default function Page() {
                     <div>
                       <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Joined</p>
                       <p>{formatDate(employee.date_of_joining)}</p>
+                    </div>
+                    <div>
+                      <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Daily Wage</p>
+                      <p>₹{employee.daily_wage}</p>
+                    </div>
+                    <div>
+                      <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Daily Beta</p>
+                      <p>₹{employee.daily_beta}</p>
                     </div>
                   </div>
                 </div>
