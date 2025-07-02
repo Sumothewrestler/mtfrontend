@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Calendar, FileText, Database, Plus, Edit, Trash2, X, Save } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, X, Save, ToggleLeft, ToggleRight } from "lucide-react"
 
 interface Tag {
   id: string
@@ -27,6 +27,16 @@ export default function TagsManagement() {
   })
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+
+  // Toggle cells functionality
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
+
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
 
   useEffect(() => {
     fetchTags()
@@ -157,7 +167,7 @@ export default function TagsManagement() {
   }
 
   return (
-    <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -199,7 +209,15 @@ export default function TagsManagement() {
 
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-lg overflow-hidden`}>
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold">All Tags</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">All Tags</h2>
+              <button
+                onClick={() => toggleCell('tags')}
+                className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              >
+                {expandedCells['tags'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -211,7 +229,7 @@ export default function TagsManagement() {
               <p className={`text-gray-500 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>No tags found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-all duration-200 ${expandedCells['tags'] ? 'max-h-96' : 'max-h-64 overflow-y-auto'}`}>
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <tr>
@@ -498,24 +516,6 @@ export default function TagsManagement() {
           </div>
         </div>
       )}
-
-      {/* Bottom navigation for mobile */}
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link href="/daysheet/daysheetmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link href="/reports/reportsmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link href="/masters/mastermain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }

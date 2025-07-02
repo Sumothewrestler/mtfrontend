@@ -4,9 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
-  Calendar,
-  FileText,
-  Database,
   Moon,
   Sun,
   ZoomIn,
@@ -15,6 +12,8 @@ import {
   List,
   Download,
   Printer,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react"
 import Select from "react-select"
 import jsPDF from "jspdf"
@@ -88,6 +87,7 @@ export default function CustomerLedger() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [zoom, setZoom] = useState(100)
   const [isCardView, setIsCardView] = useState(true)
+  const [expandedCells, setExpandedCells] = useState<{ [key: string]: boolean }>({})
 
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -286,9 +286,16 @@ export default function CustomerLedger() {
     }
   }
 
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
+
   return (
     <div
-      className={`min-h-screen pb-16 ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}
+      className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}
       style={{ fontSize: `${zoom}%` }}
     >
       <header className={`${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-sm sticky top-0 z-10`}>
@@ -434,8 +441,14 @@ export default function CustomerLedger() {
           {ledgerData.length > 0 && (
             <>
               <div className="flex justify-between items-center mb-4">
-                {/* View Toggle */}
+                {/* View Toggle with expand/collapse */}
                 <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => toggleCell('filters')}
+                    className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-800"}`}
+                  >
+                    {expandedCells['filters'] ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                  </button>
                   <span className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>View:</span>
                   <div
                     className={`flex rounded-md overflow-hidden border ${isDarkMode ? "border-gray-600" : "border-gray-300"}`}
@@ -477,27 +490,37 @@ export default function CustomerLedger() {
                 {!isCardView && (
                   <div className="flex space-x-2">
                     <button
-                      onClick={exportToPDF}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md ${
-                        isDarkMode
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-green-500 hover:bg-green-600 text-white"
-                      }`}
+                      onClick={() => toggleCell('export')}
+                      className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-800"}`}
                     >
-                      <Download size={16} />
-                      <span>Export Ledger Statement</span>
+                      {expandedCells['export'] ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                     </button>
-                    <button
-                      onClick={handlePrint}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md ${
-                        isDarkMode
-                          ? "bg-gray-600 hover:bg-gray-700 text-white"
-                          : "bg-gray-500 hover:bg-gray-600 text-white"
-                      }`}
-                    >
-                      <Printer size={16} />
-                      <span className="hidden sm:inline">Print</span>
-                    </button>
+                    {expandedCells['export'] && (
+                      <>
+                        <button
+                          onClick={exportToPDF}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-md ${
+                            isDarkMode
+                              ? "bg-green-600 hover:bg-green-700 text-white"
+                              : "bg-green-500 hover:bg-green-600 text-white"
+                          }`}
+                        >
+                          <Download size={16} />
+                          <span>Export Ledger Statement</span>
+                        </button>
+                        <button
+                          onClick={handlePrint}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-md ${
+                            isDarkMode
+                              ? "bg-gray-600 hover:bg-gray-700 text-white"
+                              : "bg-gray-500 hover:bg-gray-600 text-white"
+                          }`}
+                        >
+                          <Printer size={16} />
+                          <span className="hidden sm:inline">Print</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -678,38 +701,6 @@ export default function CustomerLedger() {
           )}
         </div>
       </main>
-
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link
-            href="/daysheet/daysheetmain"
-            className={`flex flex-col items-center py-2 ${
-              isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link
-            href="/reports/reportsmain"
-            className={`flex flex-col items-center py-2 ${
-              isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link
-            href="/masters/mastermain"
-            className={`flex flex-col items-center py-2 ${
-              isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
 
       {/* Add print styles */}
       <style jsx global>{`

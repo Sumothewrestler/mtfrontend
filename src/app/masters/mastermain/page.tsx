@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, User, Truck, Users, Calendar, FileText, Database, Moon, Sun, Building2, Plus, List } from 'lucide-react'
+import { ArrowLeft, User, Truck, Users, Building2, Plus, List, Moon, Sun, ToggleLeft, ToggleRight } from 'lucide-react'
 
 type MasterItem = {
   title: string
@@ -19,6 +19,16 @@ type MasterItem = {
 
 export default function Masters() {
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // Toggle cells functionality
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
+
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
 
   const masterItems: MasterItem[] = [
     { 
@@ -68,7 +78,7 @@ export default function Masters() {
   ]
 
   return (
-    <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -77,22 +87,35 @@ export default function Masters() {
             </Link>
             <h1 className="text-2xl font-bold">Masters</h1>
           </div>
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-            aria-label="Toggle dark mode"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => toggleCell('masters')}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-800'}`}
+              title="Toggle view"
+            >
+              {expandedCells['masters'] ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+            </button>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl mx-auto transition-all duration-200 ${
+          expandedCells['masters'] ? 'scale-105' : 'scale-100'
+        }`}>
           {masterItems.map((item) => (
             <div
               key={item.title}
-              className={`bg-gradient-to-br ${item.gradient} rounded-2xl shadow-xl p-4 backdrop-blur-sm transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-2xl`}
+              className={`bg-gradient-to-br ${item.gradient} rounded-2xl shadow-xl p-4 backdrop-blur-sm transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-2xl ${
+                expandedCells['masters'] ? 'h-auto' : 'h-48'
+              }`}
             >
               {/* Header */}
               <div className="flex items-center mb-3 text-white">
@@ -100,13 +123,19 @@ export default function Masters() {
                 <div>
                   <h3 className="text-lg font-semibold">{item.title}</h3>
                   {item.description && (
-                    <p className="text-white/80 text-xs">{item.description}</p>
+                    <p className={`text-white/80 text-xs transition-all duration-200 ${
+                      expandedCells['masters'] ? 'block' : 'hidden sm:block'
+                    }`}>
+                      {item.description}
+                    </p>
                   )}
                 </div>
               </div>
               
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${
+                expandedCells['masters'] ? 'mt-6' : 'mt-3'
+              }`}>
                 {item.actions.map((action) => (
                   <Link
                     key={action.label}
@@ -115,35 +144,59 @@ export default function Masters() {
                       isDarkMode 
                         ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' 
                         : 'bg-white/90 border-white/40 text-gray-800 hover:bg-white'
-                    } border-2 rounded-xl shadow-md p-3 text-center transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm flex items-center justify-center`}
+                    } border-2 rounded-xl shadow-md p-3 text-center transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm flex items-center justify-center ${
+                      expandedCells['masters'] ? 'py-4' : 'py-3'
+                    }`}
                   >
                     <action.icon className="h-4 w-4 mr-2" />
                     <span className="text-sm font-semibold tracking-wide">{action.label}</span>
                   </Link>
                 ))}
               </div>
+
+              {/* Additional info when expanded */}
+              {expandedCells['masters'] && (
+                <div className="mt-4 p-3 bg-white/10 rounded-lg text-white text-xs">
+                  <p>Quick access to {item.title.toLowerCase()} management features</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
-      </main>
 
-      {/* Bottom navigation for mobile */}
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link href="/daysheet/daysheetmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link href="/reports/reportsmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link href="/masters/mastermain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
+        {/* Additional section when expanded */}
+        {expandedCells['masters'] && (
+          <div className={`mt-8 p-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+            <h3 className="text-lg font-semibold mb-4">Master Data Overview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h4 className="font-medium mb-2">Customer Management</h4>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Create and manage customer profiles, track contact information, and maintain customer relationships.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Employee Management</h4>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Manage staff records, track wages, and handle employee status and roles within the organization.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Financial Accounts</h4>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Manage cash and bank accounts for financial tracking and transaction management.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Fleet Management</h4>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Track and manage your tractor fleet, including maintenance schedules and operational status.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   )
 }

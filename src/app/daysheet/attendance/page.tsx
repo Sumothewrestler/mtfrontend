@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, X, Clock, PlusCircle, Moon, Sun, Calendar, FileText, Database, Filter } from 'lucide-react'
+import { ArrowLeft, Check, X, Clock, PlusCircle, Moon, Sun, Filter } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type Employee = {
   id: number
@@ -26,7 +27,7 @@ export default function Attendance() {
   const [attendance, setAttendance] = useState<{ [key: number]: AttendanceRecord }>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [showDescriptionFor, setShowDescriptionFor] = useState<number | null>(null)
   const [showInactiveEmployees, setShowInactiveEmployees] = useState(false)
 
@@ -247,7 +248,7 @@ export default function Attendance() {
               </span>
             </button>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={toggleDarkMode}
               className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
               aria-label="Toggle dark mode"
             >
@@ -423,22 +424,7 @@ export default function Attendance() {
         )}
       </main>
 
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link href="/daysheet/daysheetmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link href="/reports/reportsmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link href="/masters/mastermain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
+
     </div>
   )
 }

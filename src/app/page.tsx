@@ -1,15 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, FileText, Database, Moon, Sun, DollarSign, TrendingUp, Home } from 'lucide-react'
+import { DollarSign, TrendingUp, Moon, Sun } from 'lucide-react'
 import Link from 'next/link'
-
-interface Section {
-  title: string
-  href: string
-  color: string
-  icon: React.ElementType
-}
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 interface DashboardData {
   previous_day_sales: number
@@ -17,15 +11,8 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-
-  const bottomNavSections: Section[] = [
-    { title: 'Home', href: '/', color: 'bg-gray-500', icon: Home },
-    { title: 'Day Sheet', href: '/daysheet/daysheetmain', color: 'bg-emerald-500', icon: Calendar },
-    { title: 'Reports', href: '/reports/reportsmain', color: 'bg-blue-500', icon: FileText },
-    { title: 'Masters', href: '/masters/mastermain', color: 'bg-purple-500', icon: Database },
-  ]
 
   const buttonContainers = [
     {
@@ -83,7 +70,7 @@ export default function Dashboard() {
             METRO TRANSPORTS
           </h1>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -136,22 +123,6 @@ export default function Dashboard() {
           ))}
         </div>
       </main>
-
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-        <div className="flex justify-around items-center h-16">
-          {bottomNavSections.map((section) => (
-            <Link
-              key={section.title}
-              href={section.href}
-              className="relative flex flex-col items-center justify-center w-full h-full"
-            >
-              <div className={`absolute inset-0 ${section.color} opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-10`}></div>
-              <section.icon size={24} className={`mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} group-hover:text-opacity-100`} />
-              <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} group-hover:text-opacity-100`}>{section.title}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
     </div>
   )
 }

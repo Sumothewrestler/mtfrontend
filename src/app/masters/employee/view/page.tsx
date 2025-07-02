@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
-  ArrowLeft, 
-  Calendar, 
-  FileText, 
-  Database, 
+  ArrowLeft,
   Edit, 
   Trash2, 
   Sun, 
@@ -14,7 +11,9 @@ import {
   Search,
   Plus,
   MoreVertical,
-  ExternalLink
+  ExternalLink,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react'
 
 interface Employee {
@@ -40,6 +39,16 @@ export default function Page() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
+
+  // Toggle cells functionality
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
+
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
 
   useEffect(() => {
     fetchEmployees()
@@ -145,7 +154,7 @@ export default function Page() {
   }
 
   return (
-    <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -191,7 +200,16 @@ export default function Page() {
 
         {/* Search and Filter Section */}
         <div className={`p-4 mb-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Search & Filters</h3>
+            <button
+              onClick={() => toggleCell('search')}
+              className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            >
+              {expandedCells['search'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+            </button>
+          </div>
+          <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 transition-all duration-200 ${expandedCells['search'] ? 'max-h-96' : 'max-h-20 overflow-hidden'}`}>
             <div className="md:col-span-2">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -491,24 +509,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
-      {/* Bottom navigation for mobile */}
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link href="/daysheet/daysheetmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link href="/reports/reportsmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link href="/masters/mastermain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }

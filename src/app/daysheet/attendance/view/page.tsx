@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Calendar } from "lucide-react"
 import Link from "next/link"
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type AttendanceRecord = {
   date: string
@@ -60,7 +61,7 @@ export default function AttendanceGridReport() {
   const [reportData, setReportData] = useState<MonthlyReportData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [showInactiveEmployees, setShowInactiveEmployees] = useState(false)
 
   const months = [
@@ -78,21 +79,7 @@ export default function AttendanceGridReport() {
     "December",
   ]
 
-  useEffect(() => {
-    const darkModePreference = localStorage.getItem('darkMode')
-    if (darkModePreference) {
-      setIsDarkMode(darkModePreference === 'true')
-    }
-  }, [])
 
-  useEffect(() => {
-    localStorage.setItem('darkMode', isDarkMode.toString())
-    if (isDarkMode) {
-      document.body.classList.add('dark')
-    } else {
-      document.body.classList.remove('dark')
-    }
-  }, [isDarkMode])
 
   const fetchMonthlyReport = useCallback(async () => {
     setIsLoading(true)
@@ -241,7 +228,7 @@ export default function AttendanceGridReport() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Attendance Grid Report</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className="p-2 rounded-full bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-yellow-300"
           >
             {isDarkMode ? (

@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, Briefcase, Receipt, Calendar, FileText, Database, Moon, Sun, DollarSign, CreditCard, BookOpen, PhoneCall, Plus, Eye } from 'lucide-react'
+import { ArrowLeft, Users, Briefcase, Receipt, Moon, Sun, DollarSign, CreditCard, BookOpen, PhoneCall, Plus, Eye, FileText } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 export default function DaySheet() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   const groups = [
     {
@@ -96,11 +97,7 @@ export default function DaySheet() {
     }
   ]
 
-  const bottomNavItems = [
-    { title: 'Day Sheet', icon: Calendar, href: '/daysheet/daysheetmain' },
-    { title: 'Reports', icon: FileText, href: '/reports/reportsmain' },
-    { title: 'Masters', icon: Database, href: '/masters/mastermain' },
-  ]
+
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
@@ -113,7 +110,7 @@ export default function DaySheet() {
             <h1 className="text-2xl font-bold">Day Sheet</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -154,20 +151,7 @@ export default function DaySheet() {
           </div>
         ))}
       </main>
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          {bottomNavItems.map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              <item.icon className="h-6 w-6 mb-1" />
-              <span className="text-xs">{item.title}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+
     </div>
   )
 }

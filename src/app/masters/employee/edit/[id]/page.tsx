@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, Sun, Moon, ToggleLeft, ToggleRight } from 'lucide-react'
 
 export default function Page() {
   // Use next/navigation's useParams hook instead of receiving params as props
@@ -24,6 +24,16 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // Toggle cells functionality
+  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
+
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
 
   useEffect(() => {
     if (id) {
@@ -148,12 +158,21 @@ export default function Page() {
             <div className={`p-6 rounded-lg shadow-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <form onSubmit={handleSubmit}>
                 <div className="mb-6">
-                  <label 
-                    htmlFor="name" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Employee Name
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="name" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Employee Name
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('name')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['name'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <input 
                     type="text"
                     id="name"
@@ -165,17 +184,28 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['name'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <label 
-                    htmlFor="role" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Role
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="role" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Role
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('role')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['role'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <select 
                     id="role"
                     name="role"
@@ -186,7 +216,9 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['role'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   >
                     <option value="Driver">Driver</option>
                     <option value="Loadman">Loadman</option>
@@ -194,12 +226,21 @@ export default function Page() {
                 </div>
 
                 <div className="mb-6">
-                  <label 
-                    htmlFor="phone_number" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Phone Number
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="phone_number" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Phone Number
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('phone')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['phone'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <input 
                     type="tel"
                     id="phone_number"
@@ -212,7 +253,9 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['phone'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   />
                   <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     10-digit mobile number without country code
@@ -220,12 +263,21 @@ export default function Page() {
                 </div>
 
                 <div className="mb-6">
-                  <label 
-                    htmlFor="date_of_joining" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Date of Joining
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="date_of_joining" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Date of Joining
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('date')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['date'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <input 
                     type="date"
                     id="date_of_joining"
@@ -237,17 +289,28 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['date'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <label 
-                    htmlFor="daily_wage" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Daily Wage (₹)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="daily_wage" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Daily Wage (₹)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('wage')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['wage'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <input 
                     type="number"
                     step="0.01"
@@ -260,17 +323,28 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['wage'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <label 
-                    htmlFor="daily_beta" 
-                    className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Daily Beta (₹)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="daily_beta" 
+                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Daily Beta (₹)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => toggleCell('beta')}
+                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    >
+                      {expandedCells['beta'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <input 
                     type="number"
                     step="0.01"
@@ -283,7 +357,9 @@ export default function Page() {
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      expandedCells['beta'] ? 'h-20' : 'h-10'
+                    } transition-all duration-200`}
                   />
                 </div>
 

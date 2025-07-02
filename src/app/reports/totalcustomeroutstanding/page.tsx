@@ -4,9 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
-  Calendar,
-  FileText,
-  Database,
   Moon,
   Sun,
   ZoomIn,
@@ -145,7 +142,7 @@ export default function TotalCustomerOutstanding() {
 
   return (
     <div
-      className={`min-h-screen pb-16 ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}
+      className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}
       style={{ fontSize: `${zoom}%` }}
     >
       <header className={`${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-sm sticky top-0 z-10`}>
@@ -568,32 +565,7 @@ export default function TotalCustomerOutstanding() {
         </div>
       </main>
 
-      {/* Bottom navigation for mobile */}
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link
-            href="/daysheet/daysheetmain"
-            className={`flex flex-col items-center py-2 ${isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
-          >
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link
-            href="/reports/reportsmain"
-            className={`flex flex-col items-center py-2 ${isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
-          >
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link
-            href="/masters/mastermain"
-            className={`flex flex-col items-center py-2 ${isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"}`}
-          >
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
+
     </div>
   )
 }

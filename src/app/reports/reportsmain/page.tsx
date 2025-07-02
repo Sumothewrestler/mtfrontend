@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, FileText, TrendingUp, Truck, Calendar, Database, Moon, Sun, DollarSign, Building2, PieChart, CreditCard, Book, Calculator, User } from 'lucide-react'
+import { ArrowLeft, FileText, TrendingUp, Truck, Moon, Sun, DollarSign, Building2, PieChart, CreditCard, Book, Calculator, User, ToggleLeft, ToggleRight } from 'lucide-react'
 
 type SubItem = {
   title: string
@@ -27,6 +27,14 @@ type ReportGroup = {
 
 export default function Reports() {
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [expandedCells, setExpandedCells] = useState<{ [key: string]: boolean }>({})
+
+  const toggleCell = (cellKey: string) => {
+    setExpandedCells(prev => ({
+      ...prev,
+      [cellKey]: !prev[cellKey]
+    }))
+  }
 
   const reportGroups: ReportGroup[] = [
     {
@@ -75,7 +83,7 @@ export default function Reports() {
   ]
 
   return (
-    <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -84,23 +92,50 @@ export default function Reports() {
             </Link>
             <h1 className="text-2xl font-bold">Reports</h1>
           </div>
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-            aria-label="Toggle dark mode"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => toggleCell('header')}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-800'}`}
+            >
+              {expandedCells['header'] ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+            </button>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
+        {expandedCells['header'] && (
+          <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+            <h2 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+              Reports Dashboard
+            </h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Access comprehensive reporting tools for outstanding amounts, financial data, and operational metrics.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-6">
           {reportGroups.map((group) => (
             <div key={group.title} className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden`}>
               <div className={`${group.color} p-6`}>
-                <div className="flex items-center">
-                  <group.icon className="h-8 w-8 mr-4 text-white" />
-                  <h2 className="text-xl font-semibold text-white">{group.title}</h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <group.icon className="h-8 w-8 mr-4 text-white" />
+                    <h2 className="text-xl font-semibold text-white">{group.title}</h2>
+                  </div>
+                  <button
+                    onClick={() => toggleCell(`group-${group.title}`)}
+                    className="p-2 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+                  >
+                    {expandedCells[`group-${group.title}`] ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                  </button>
                 </div>
               </div>
               <div className="p-4 space-y-4">
@@ -119,13 +154,21 @@ export default function Reports() {
                       </Link>
                     ) : (
                       <div>
-                        <div className={`flex items-center p-3 rounded-lg ${
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${
                           isDarkMode ? 'text-gray-300' : 'text-gray-600'
                         }`}>
-                          <item.icon className="h-6 w-6 mr-3" />
-                          <span className="font-medium">{item.title}</span>
+                          <div className="flex items-center">
+                            <item.icon className="h-6 w-6 mr-3" />
+                            <span className="font-medium">{item.title}</span>
+                          </div>
+                          <button
+                            onClick={() => toggleCell(`item-${item.title}`)}
+                            className={`p-1 rounded ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-800'}`}
+                          >
+                            {expandedCells[`item-${item.title}`] ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                          </button>
                         </div>
-                        {item.subItems && (
+                        {(expandedCells[`item-${item.title}`] || expandedCells[`group-${group.title}`]) && item.subItems && (
                           <div className="ml-6 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {item.subItems.map((subItem) => (
                               <Link key={subItem.title} href={subItem.href}>
@@ -148,23 +191,6 @@ export default function Reports() {
           ))}
         </div>
       </main>
-
-      <nav className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg md:hidden`}>
-        <div className="flex justify-around">
-          <Link href="/daysheet/daysheetmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs">Day Sheet</span>
-          </Link>
-          <Link href="/reports/reportsmain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <FileText className="h-6 w-6 mb-1" />
-            <span className="text-xs">Reports</span>
-          </Link>
-          <Link href="/masters/mastermain" className={`flex flex-col items-center py-2 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <Database className="h-6 w-6 mb-1" />
-            <span className="text-xs">Masters</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }

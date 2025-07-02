@@ -15,6 +15,7 @@ import {
 import Link from "next/link"
 import { motion } from "framer-motion"
 import React from "react"
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 // Add CSS for hiding scrollbar
 const hideScrollbarCSS = `
@@ -67,7 +68,7 @@ export default function NewFollowUpPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode} = useDarkMode()
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [sortOption, setSortOption] = useState<SortOption>("nameAsc")
@@ -86,14 +87,7 @@ export default function NewFollowUpPage() {
   // Check system preference for dark mode
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      setIsDarkMode(prefersDark)
-
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-      const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches)
-      mediaQuery.addEventListener("change", handleChange)
-
-      return () => mediaQuery.removeEventListener("change", handleChange)
+      // Dark mode is now handled by DarkModeContext
     }
   }, [])
 
