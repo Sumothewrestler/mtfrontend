@@ -1,0 +1,318 @@
+'use client'
+
+import React, { useState, useEffect, useCallback } from 'react'
+import { Search, Calendar, Filter, CheckCircle, Clock, AlertTriangle, ListTodo, Target } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
+
+interface Task {
+  id: number
+  task_name: string
+  status: 'Pending' | 'Done'
+  due_date: string
+  created_at: string
+  completion_date: string | null
+}
+
+interface TaskSummary {
+  total_tasks: number
+  pending_tasks: number
+  completed_tasks: number
+  overdue_tasks: number
+  tasks_due_today: number
+}
+
+interface TaskReportData {
+  summary: TaskSummary
+  tasks: Task[]
+}
+
+export default function TaskReportsPage() {
+  const { isDarkMode } = useDarkMode()
+  const [reportData, setReportData] = useState<TaskReportData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState({
+    start_date: '',
+    end_date: '',
+    status: 'All',
+    search: ''
+  })
+
+  const fetchReportData = useCallback(async () => {
+    try {
+      setLoading(true)
+      let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/report/`
+      const params = new URLSearchParams()
+      
+      if (filters.start_date) params.append('start_date', filters.start_date)
+      if (filters.end_date) params.append('end_date', filters.end_date)
+      if (filters.status !== 'All') params.append('status', filters.status)
+      if (filters.search) params.append('search', filters.search)
+      
+      if (params.toString()) url += `?${params.toString()}`
+      
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Failed to fetch report data')
+      const data = await response.json()
+      setReportData(data)
+    } catch (error) {
+      console.error('Error fetching report data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [filters])
+
+  useEffect(() => {
+    fetchReportData()
+  }, [fetchReportData])
+
+  const handleToggleStatus = async (taskId: number) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/${taskId}/toggle-status/`, {
+        method: 'PATCH'
+      })
+      if (!response.ok) throw new Error('Failed to toggle task status')
+      await fetchReportData()
+    } catch (error) {
+      console.error('Error toggling task status:', error)
+    }
+  }
+
+  const getStatusColor = (status: string, dueDate: string) => {
+    if (status === 'Done') return 'text-green-600'
+    const today = new Date().toISOString().split('T')[0]
+    if (dueDate < today) return 'text-red-600'
+    if (dueDate === today) return 'text-orange-600'
+    return 'text-blue-600'
+  }
+
+  const getStatusBgColor = (status: string, dueDate: string) => {
+    if (status === 'Done') return 'bg-green-100'
+    const today = new Date().toISOString().split('T')[0]
+    if (dueDate < today) return 'bg-red-100'
+    if (dueDate === today) return 'bg-orange-100'
+    return 'bg-blue-100'
+  }
+
+  const summaryCards = [
+    {
+      title: 'Total Tasks',
+      value: reportData?.summary.total_tasks || 0,
+      icon: ListTodo,
+      color: 'bg-blue-500',
+      textColor: 'text-blue-600'
+    },
+    {
+      title: 'Pending Tasks',
+      value: reportData?.summary.pending_tasks || 0,
+      icon: Clock,
+      color: 'bg-yellow-500',
+      textColor: 'text-yellow-600'
+    },
+    {
+      title: 'Completed Tasks',
+      value: reportData?.summary.completed_tasks || 0,
+      icon: CheckCircle,
+      color: 'bg-green-500',
+      textColor: 'text-green-600'
+    },
+    {
+      title: 'Overdue Tasks',
+      value: reportData?.summary.overdue_tasks || 0,
+      icon: AlertTriangle,
+      color: 'bg-red-500',
+      textColor: 'text-red-600'
+    },
+    {
+      title: 'Due Today',
+      value: reportData?.summary.tasks_due_today || 0,
+      icon: Target,
+      color: 'bg-orange-500',
+      textColor: 'text-orange-600'
+    }
+  ]
+
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Task Reports</h1>
+          <p className="text-gray-500 mt-1">Comprehensive overview of your task management</p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          {summaryCards.map((card, index) => (
+            <div key={index} className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">{card.title}</p>
+                  <p className={`text-2xl font-bold ${card.textColor}`}>{card.value}</p>
+                </div>
+                <div className={`p-3 rounded-full ${card.color} bg-opacity-10`}>
+                  <card.icon className={`w-6 h-6 ${card.textColor}`} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
+          <div className="flex items-center mb-4">
+            <Filter size={20} className="mr-2" />
+            <h2 className="text-lg font-semibold">Filters</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Start Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="date"
+                  value={filters.start_date}
+                  onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">End Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="date"
+                  value={filters.end_date}
+                  onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className={`w-full px-4 py-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Done">Done</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Search Tasks</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search by task name..."
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-2 mt-4">
+            <button
+              onClick={() => setFilters({ start_date: '', end_date: '', status: 'All', search: '' })}
+              className={`px-4 py-2 rounded-lg border ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-50'}`}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Tasks Table */}
+        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg`}>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold">Task Details</h2>
+            <p className="text-gray-500 text-sm">
+              {reportData?.tasks.length || 0} tasks found
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="p-8 text-center">Loading report data...</div>
+          ) : !reportData?.tasks.length ? (
+            <div className="p-8 text-center text-gray-500">
+              No tasks found matching your criteria.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Task Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Due Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completion Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {reportData.tasks.map((task) => (
+                    <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBgColor(task.status, task.due_date)} ${getStatusColor(task.status, task.due_date)}`}>
+                          {task.status === 'Done' ? <CheckCircle size={14} className="mr-1" /> : <Clock size={14} className="mr-1" />}
+                          {task.status}
+                          {task.status === 'Pending' && task.due_date < new Date().toISOString().split('T')[0] && ' (Overdue)'}
+                          {task.status === 'Pending' && task.due_date === new Date().toISOString().split('T')[0] && ' (Due Today)'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm font-medium ${task.status === 'Done' ? 'line-through opacity-60' : ''}`}>
+                          {task.task_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(task.due_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(task.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {task.completion_date ? new Date(task.completion_date).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => handleToggleStatus(task.id)}
+                          className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
+                            task.status === 'Done' 
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                              : 'bg-green-100 text-green-800 hover:bg-green-200'
+                          }`}
+                        >
+                          {task.status === 'Done' ? 'Mark Pending' : 'Mark Done'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+} 

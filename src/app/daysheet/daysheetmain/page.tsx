@@ -59,16 +59,16 @@ export default function DaySheet() {
       title: 'Others',
       items: [
         {
-          title: 'Attendance',
+          title: 'Material Demand',
           icon: Users,
           color: 'bg-purple-400',
           options: [
-            { title: 'New', icon: Plus, href: '/daysheet/attendance' },
-            { title: 'View', icon: Eye, href: '/daysheet/attendance/view' }
+            { title: 'New', icon: Plus, href: '/daysheet/materials/entry' },
+            { title: 'View', icon: Eye, href: '/daysheet/materials/view' }
           ]
         },
         {
-          title: 'Advance Booking',
+          title: 'Booking',
           icon: BookOpen,
           color: 'bg-purple-500',
           options: [
@@ -81,8 +81,8 @@ export default function DaySheet() {
           icon: PhoneCall,
           color: 'bg-purple-600',
           options: [
-            { title: 'Follow Up', icon: PhoneCall, href: '/daysheet/followup' },
-            { title: 'View', icon: Eye, href: '/daysheet/followup/view' }
+            { title: 'Follow', icon: PhoneCall, href: '/daysheet/followup' },
+            { title: 'Reports', icon: Eye, href: '/daysheet/followup/view' }
           ]
         },
         {
@@ -131,14 +131,14 @@ export default function DaySheet() {
                       <h3 className="text-sm font-medium ml-2 text-white">{item.title}</h3>
                     </div>
                   </div>
-                  <div className="flex bg-white">
+                  <div className={`flex ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}>
                     {item.options.map((option, index) => (
                       <Link key={option.title} href={option.href} className="flex-1">
                         <div className={`flex items-center justify-center py-2 px-3 text-sm font-medium transition-colors duration-200 ${
                           isDarkMode 
                             ? 'text-gray-200 hover:bg-gray-800' 
                             : 'text-gray-700 hover:bg-gray-100'
-                        } ${index === 0 && item.options.length > 1 ? 'border-r border-gray-200' : ''}`}>
+                        } ${index === 0 && item.options.length > 1 ? `border-r ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}` : ''}`}>
                           <option.icon className="h-4 w-4 mr-1" />
                           {option.title}
                         </div>

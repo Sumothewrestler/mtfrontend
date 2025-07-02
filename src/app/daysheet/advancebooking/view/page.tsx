@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Moon, Sun, Calendar, User, FileText, Clock } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
@@ -26,11 +26,7 @@ export default function AdvanceBookingReports() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('Pending')
   const { isDarkMode, toggleDarkMode } = useDarkMode()
 
-  useEffect(() => {
-    fetchBookings()
-  }, [activeFilter])
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -47,7 +43,11 @@ export default function AdvanceBookingReports() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [activeFilter])
+
+  useEffect(() => {
+    fetchBookings()
+  }, [fetchBookings])
 
   const updateStatus = async (id: number, newStatus: 'Pending' | 'Done' | 'Cancelled') => {
     try {

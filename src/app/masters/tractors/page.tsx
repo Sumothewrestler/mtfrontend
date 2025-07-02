@@ -1,6 +1,6 @@
- 'use client'
+'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Edit2, Search, Filter, Calendar, Truck, FileText, Moon, Sun, Trash2 } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
@@ -36,33 +36,7 @@ export default function TractorView() {
   })
   const { isDarkMode, toggleDarkMode } = useDarkMode()
 
-  useEffect(() => {
-    fetchTractors()
-  }, [])
-
-  useEffect(() => {
-    filterTractors()
-  }, [tractors, searchTerm, filterRcExpiry])
-
-  const fetchTractors = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tractors/list/`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch tractors')
-      }
-      const data = await response.json()
-      setTractors(data)
-    } catch (error) {
-      console.error('Error fetching tractors:', error)
-      setError('Failed to load tractors. Please try again later.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const filterTractors = () => {
+  const filterTractors = useCallback(() => {
     let filtered = tractors.filter(tractor =>
       tractor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tractor.tractor_number.toLowerCase().includes(searchTerm.toLowerCase())
@@ -90,6 +64,32 @@ export default function TractorView() {
     }
 
     setFilteredTractors(filtered)
+  }, [tractors, searchTerm, filterRcExpiry])
+
+  useEffect(() => {
+    fetchTractors()
+  }, [])
+
+  useEffect(() => {
+    filterTractors()
+  }, [filterTractors])
+
+  const fetchTractors = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tractors/list/`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch tractors')
+      }
+      const data = await response.json()
+      setTractors(data)
+    } catch (error) {
+      console.error('Error fetching tractors:', error)
+      setError('Failed to load tractors. Please try again later.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const openCreateModal = () => {

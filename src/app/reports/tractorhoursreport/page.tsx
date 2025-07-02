@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Moon, Sun, ZoomIn, ZoomOut, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
@@ -34,8 +34,6 @@ export default function TractorHoursReport() {
       [cellKey]: !prev[cellKey]
     }))
   }
-
-
 
   const generateReport = async () => {
     setIsLoading(true)
