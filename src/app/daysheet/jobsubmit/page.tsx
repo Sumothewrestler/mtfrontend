@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun, Search, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, ChevronDown } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
 interface Customer {
@@ -200,7 +200,7 @@ export default function JobSubmitPage() {
                     name={`jobs.${index}.customer` as const}
                     control={control}
                     rules={{ required: "Customer is required" }}
-                    render={({ field }) => (
+                    render={() => (
                       <div className="relative">
                         <div className="flex items-center">
                           <input

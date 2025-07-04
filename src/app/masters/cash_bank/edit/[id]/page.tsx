@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Save, Moon, Sun, Banknote, Building2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Moon, Sun, Loader2 } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type CashBankAccount = {

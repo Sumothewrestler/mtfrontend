@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, User, Users, FileText, Calendar, Calculator, BookOpen, TrendingUp, DollarSign, Clock, ClipboardList, ShoppingCart, Receipt, Moon, Sun } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'

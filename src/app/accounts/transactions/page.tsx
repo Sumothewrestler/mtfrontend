@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Moon, Sun, Plus, X, Building, FileText, DollarSign, Calendar, AlertCircle, CheckCircle, CreditCard } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -82,32 +82,8 @@ export default function TransactionEntryPage() {
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchBusinesses()
-    fetchCashBankAccounts()
-  }, [])
-
-  // Fetch ledgers when business changes
-  useEffect(() => {
-    if (formData.business) {
-      fetchLedgers(formData.business as number)
-    } else {
-      setLedgers([])
-    }
-    setFormData(prev => ({ ...prev, ledger: '' }))
-  }, [formData.business])
-
-  // Update paid amount when status or amount changes
-  useEffect(() => {
-    if (formData.status === 'Paid' && formData.amount) {
-      setFormData(prev => ({ ...prev, paid_amount: prev.amount }))
-    } else if (formData.status === 'Unpaid') {
-      setFormData(prev => ({ ...prev, paid_amount: '', payment_account: '' }))
-    }
-  }, [formData.status, formData.amount])
-
-  const fetchBusinesses = async () => {
+  // Memoize fetch functions to prevent unnecessary re-renders
+  const fetchBusinesses = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}businesses/`)
       if (response.ok) {
@@ -117,9 +93,9 @@ export default function TransactionEntryPage() {
     } catch (error) {
       console.error('Error fetching businesses:', error)
     }
-  }
+  }, [API_BASE_URL])
 
-  const fetchLedgers = async (businessId: number) => {
+  const fetchLedgers = useCallback(async (businessId: number) => {
     try {
       const response = await fetch(`${API_BASE_URL}ledgers/?business=${businessId}`)
       if (response.ok) {
@@ -129,9 +105,9 @@ export default function TransactionEntryPage() {
     } catch (error) {
       console.error('Error fetching ledgers:', error)
     }
-  }
+  }, [API_BASE_URL])
 
-  const fetchCashBankAccounts = async () => {
+  const fetchCashBankAccounts = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}cash-bank-accounts/`)
       if (response.ok) {
@@ -141,7 +117,32 @@ export default function TransactionEntryPage() {
     } catch (error) {
       console.error('Error fetching cash bank accounts:', error)
     }
-  }
+  }, [API_BASE_URL])
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchBusinesses()
+    fetchCashBankAccounts()
+  }, [fetchBusinesses, fetchCashBankAccounts])
+
+  // Fetch ledgers when business changes
+  useEffect(() => {
+    if (formData.business) {
+      fetchLedgers(formData.business as number)
+    } else {
+      setLedgers([])
+    }
+    setFormData(prev => ({ ...prev, ledger: '' }))
+  }, [formData.business, fetchLedgers])
+
+  // Update paid amount when status or amount changes
+  useEffect(() => {
+    if (formData.status === 'Paid' && formData.amount) {
+      setFormData(prev => ({ ...prev, paid_amount: prev.amount }))
+    } else if (formData.status === 'Unpaid') {
+      setFormData(prev => ({ ...prev, paid_amount: '', payment_account: '' }))
+    }
+  }, [formData.status, formData.amount])
 
   const handleInputChange = (field: keyof TransactionFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -173,7 +174,7 @@ export default function TransactionEntryPage() {
         const errorData = await response.json()
         showMessage('error', errorData.errors?.name?.[0] || 'Error creating business')
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Network error creating business')
     }
   }
@@ -203,7 +204,7 @@ export default function TransactionEntryPage() {
         const errorData = await response.json()
         showMessage('error', errorData.errors?.name?.[0] || 'Error creating ledger')
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Network error creating ledger')
     }
   }
@@ -241,7 +242,7 @@ export default function TransactionEntryPage() {
       })
 
       if (response.ok) {
-        const transaction = await response.json()
+        await response.json()
         showMessage('success', 'Transaction created successfully!')
         
         // Reset form
@@ -257,9 +258,14 @@ export default function TransactionEntryPage() {
         })
       } else {
         const errorData = await response.json()
-        showMessage('error', errorData.errors ? Object.values(errorData.errors)[0] : 'Error creating transaction')
+        const errorMessage = errorData.errors 
+          ? (Array.isArray(Object.values(errorData.errors)[0]) 
+              ? (Object.values(errorData.errors)[0] as string[])[0] 
+              : String(Object.values(errorData.errors)[0]))
+          : 'Error creating transaction'
+        showMessage('error', errorMessage)
       }
-    } catch (error) {
+    } catch {
       showMessage('error', 'Network error creating transaction')
     } finally {
       setIsLoading(false)

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, Moon, Sun, CheckCircle, Circle, Clock, AlertTriangle, ChevronRight, Plus, X } from 'lucide-react'
+import { DollarSign, Moon, Sun, Circle, Clock, Plus, X } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -80,7 +80,7 @@ export default function Dashboard() {
       title: 'Account Management',
       gradient: 'from-emerald-400 via-teal-500 to-green-600',
       buttons: [
-        { title: 'Labour A/c', href: '/accounts/labour' },
+        { title: 'Labour A/c', href: '/daysheet/employee' },
         { title: 'Accounts', href: '/accounts/general' },
       ]
     },

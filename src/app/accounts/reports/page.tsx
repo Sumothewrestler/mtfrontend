@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Moon, Sun, Building, FileText, Filter, Eye, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
@@ -37,11 +37,41 @@ export default function LedgerReportsPage() {
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
+  // Wrap fetchBusinesses in useCallback
+  const fetchBusinesses = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}businesses/`)
+      if (response.ok) {
+        const data = await response.json()
+        setBusinesses(data)
+      }
+    } catch (error) {
+      console.error('Error fetching businesses:', error)
+    }
+  }, [API_BASE_URL])
+
+  // Wrap fetchLedgers in useCallback
+  const fetchLedgers = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}ledgers/`)
+      if (response.ok) {
+        const data = await response.json()
+        setLedgers(data)
+        setFilteredLedgers(data)
+      }
+    } catch (error) {
+      console.error('Error fetching ledgers:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [API_BASE_URL])
+
   // Fetch data on component mount
   useEffect(() => {
     fetchBusinesses()
     fetchLedgers()
-  }, [])
+  }, [fetchBusinesses, fetchLedgers])
 
   // Apply filters when data or filters change
   useEffect(() => {
@@ -57,34 +87,6 @@ export default function LedgerReportsPage() {
 
     setFilteredLedgers(filtered)
   }, [ledgers, selectedBusiness, selectedCategory])
-
-  const fetchBusinesses = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}businesses/`)
-      if (response.ok) {
-        const data = await response.json()
-        setBusinesses(data)
-      }
-    } catch (error) {
-      console.error('Error fetching businesses:', error)
-    }
-  }
-
-  const fetchLedgers = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}ledgers/`)
-      if (response.ok) {
-        const data = await response.json()
-        setLedgers(data)
-        setFilteredLedgers(data)
-      }
-    } catch (error) {
-      console.error('Error fetching ledgers:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Search, Calendar, Filter, CheckCircle, Clock, AlertTriangle, ListTodo, Target, ArrowLeft } from 'lucide-react'
+import { Calendar, Filter, CheckCircle, Clock, AlertTriangle, ListTodo, Target, ArrowLeft } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 import Link from 'next/link'
 

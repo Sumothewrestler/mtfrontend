@@ -1,0 +1,438 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { ArrowLeft, Moon, Sun, Eye, Calendar, User} from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
+import Loading from '@/components/Loading'
+
+type Employee = {
+  id: number
+  name: string
+  role: string
+  current_balance: number
+  phone_number: string
+  date_of_joining: string
+}
+
+type LedgerEntry = {
+  id: number
+  date: string
+  description: string
+  debit: number
+  credit: number
+  transaction_type: string
+  balance: number
+  reference_id?: number
+}
+
+type EmployeeLedgerData = {
+  employee: Employee
+  from_date?: string
+  to_date?: string
+  opening_balance?: number
+  closing_balance?: number
+  ledger_entries: LedgerEntry[]
+}
+
+export default function EmployeeLedgerReport() {
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [totalOutstanding, setTotalOutstanding] = useState<number>(0)
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [ledgerData, setLedgerData] = useState<EmployeeLedgerData | null>(null)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLedgerLoading, setIsLedgerLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
+
+  const fetchEmployeesSummary = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employee-ledger/`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch employees: ${response.status} ${response.statusText}`)
+      }
+      const data = await response.json()
+      setEmployees(data.employees || [])
+      setTotalOutstanding(data.total_outstanding || 0)
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      setError(`Failed to load employees. Error: ${(error as Error).message}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchEmployeesSummary()
+  }, [fetchEmployeesSummary])
+
+  const fetchEmployeeLedger = useCallback(async (employeeId: number, from: string, to: string) => {
+    if (!from || !to) {
+      alert('Please select both from and to dates')
+      return
+    }
+    
+    setIsLedgerLoading(true)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}employee-ledger/?employee_id=${employeeId}&from_date=${from}&to_date=${to}`
+      )
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ledger: ${response.status} ${response.statusText}`)
+      }
+      const data = await response.json()
+      setLedgerData(data)
+    } catch (error) {
+      console.error('Error fetching ledger:', error)
+      alert(`Failed to load ledger. Error: ${(error as Error).message}`)
+    } finally {
+      setIsLedgerLoading(false)
+    }
+  }, [])
+
+  const handleViewLedger = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setLedgerData(null)
+    
+    // Set default date range to current month
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    
+    const fromDateStr = firstDay.toISOString().split('T')[0]
+    const toDateStr = lastDay.toISOString().split('T')[0]
+    
+    setFromDate(fromDateStr)
+    setToDate(toDateStr)
+  }
+
+  const handleGenerateLedger = () => {
+    if (selectedEmployee) {
+      fetchEmployeeLedger(selectedEmployee.id, fromDate, toDate)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  }
+
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case 'daily_entry': return 'bg-blue-100 text-blue-800'
+      case 'payment': return 'bg-green-100 text-green-800'
+      case 'adjustment': return 'bg-yellow-100 text-yellow-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getBalanceColor = (balance: number) => {
+    if (balance > 0) return 'text-red-600' // Employee is owed money
+    if (balance < 0) return 'text-green-600' // Employee owes money
+    return 'text-gray-600'
+  }
+
+  return (
+    <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <Link href="/" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+            <h1 className="text-2xl font-bold text-blue-600">Employee Ledger Reports</h1>
+          </div>
+          <button
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+            aria-label="Toggle dark mode"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {isLoading ? (
+          <Loading message="Loading employee data..." size="lg" />
+        ) : error ? (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Employee Summary Section */}
+            {!selectedEmployee && (
+              <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <User className="mr-2" size={24} />
+                    <span className="text-sm font-medium">Total Outstanding: </span>
+                    <span className={`ml-2 text-lg font-bold ${getBalanceColor(totalOutstanding)}`}>
+                      {formatCurrency(totalOutstanding)}
+                    </span>
+                  </div>
+                </div>
+
+                {employees.length === 0 ? (
+                  <div className={`p-4 rounded-md ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
+                    No active employees found.
+                  </div>
+                ) : (
+                  <>
+                    {/* Desktop View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium">Employee</th>
+                            <th className="px-4 py-3 text-right font-medium">Current Balance</th>
+                            <th className="px-4 py-3 text-center font-medium">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {employees.map(employee => (
+                            <tr key={employee.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
+                              <td className="px-4 py-3">
+                                <div>
+                                  <div className="font-medium">{employee.name}</div>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                      employee.role === 'Driver' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                                    }`}>
+                                      {employee.role}
+                                    </span>
+                                    <span className="text-xs text-gray-500">{employee.phone_number}</span>
+                                    <span className="text-xs text-gray-500">{formatDate(employee.date_of_joining)}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(employee.current_balance)}`}>
+                                {formatCurrency(employee.current_balance)}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => handleViewLedger(employee)}
+                                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                >
+                                  <Eye size={16} className="mr-1" />
+                                  View Ledger
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View */}
+                    <div className="md:hidden space-y-4">
+                      {employees.map(employee => (
+                        <div key={employee.id} className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4`}>
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="font-medium text-base">{employee.name}</h3>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  employee.role === 'Driver' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                                }`}>
+                                  {employee.role}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-medium ${getBalanceColor(employee.current_balance)}`}>
+                                {formatCurrency(employee.current_balance)}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleViewLedger(employee)}
+                            className="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                          >
+                            <Eye size={16} className="mr-1" />
+                            View Ledger
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Date Selection Section */}
+            {selectedEmployee && (
+              <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold flex items-center">
+                      <User className="mr-2" size={24} />
+                      {selectedEmployee.name} - Ledger Report
+                    </h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                      {selectedEmployee.role} | Current Balance: {' '}
+                      <span className={`font-medium ${getBalanceColor(selectedEmployee.current_balance)}`}>
+                        {formatCurrency(selectedEmployee.current_balance)}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {setSelectedEmployee(null); setLedgerData(null)}}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                      isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    } transition-colors`}
+                  >
+                    ← Back to Summary
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <label htmlFor="fromDate" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      id="fromDate"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="toDate" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      id="toDate"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex items-end">
+                    <button
+                      onClick={handleGenerateLedger}
+                      disabled={isLedgerLoading || !fromDate || !toDate}
+                      className={`w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center ${
+                        isLedgerLoading || !fromDate || !toDate
+                          ? 'bg-gray-400 cursor-not-allowed text-gray-200'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      }`}
+                    >
+                      <Calendar className="mr-2" size={16} />
+                      {isLedgerLoading ? 'Generating...' : 'Generate Ledger'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Ledger Details Section */}
+            {ledgerData && (
+              <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6`}>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-4">Ledger Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <p className="text-sm font-medium mb-1">Opening Balance</p>
+                      <p className={`text-xl font-bold ${getBalanceColor(ledgerData.opening_balance || 0)}`}>
+                        {formatCurrency(ledgerData.opening_balance || 0)}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <p className="text-sm font-medium mb-1">Closing Balance</p>
+                      <p className={`text-xl font-bold ${getBalanceColor(ledgerData.closing_balance || 0)}`}>
+                        {formatCurrency(ledgerData.closing_balance || 0)}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <p className="text-sm font-medium mb-1">Total Transactions</p>
+                      <p className="text-xl font-bold">{ledgerData.ledger_entries.length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {ledgerData.ledger_entries.length === 0 ? (
+                  <div className={`p-4 rounded-md ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
+                    No transactions found for the selected date range.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium">Date</th>
+                          <th className="px-4 py-3 text-left font-medium">Description</th>
+                          <th className="px-4 py-3 text-left font-medium">Type</th>
+                          <th className="px-4 py-3 text-right font-medium">Debit</th>
+                          <th className="px-4 py-3 text-right font-medium">Credit</th>
+                          <th className="px-4 py-3 text-right font-medium">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {ledgerData.ledger_entries.map(entry => (
+                          <tr key={entry.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
+                            <td className="px-4 py-3">{formatDate(entry.date)}</td>
+                            <td className="px-4 py-3 max-w-md">
+                              <div className="truncate" title={entry.description}>
+                                {entry.description}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
+                                {entry.transaction_type.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {entry.debit > 0 && (
+                                <span className="text-red-600 font-medium">
+                                  {formatCurrency(entry.debit)}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {entry.credit > 0 && (
+                                <span className="text-green-600 font-medium">
+                                  {formatCurrency(entry.credit)}
+                                </span>
+                              )}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(entry.balance)}`}>
+                              {formatCurrency(entry.balance)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

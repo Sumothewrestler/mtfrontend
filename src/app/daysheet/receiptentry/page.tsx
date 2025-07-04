@@ -40,9 +40,11 @@ export default function ReceiptEntry() {
   const [description, setDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   useEffect(() => {
+    setMounted(true)
     fetchCustomers()
     fetchCashBankAccounts()
   }, [])
@@ -192,43 +194,60 @@ export default function ReceiptEntry() {
             <label htmlFor="customer" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Customer Name
             </label>
-            <Select<CustomerOption>
-              id="customer"
-              value={customers.find(c => c.id.toString() === selectedCustomer) ? 
-                { value: selectedCustomer, label: customers.find(c => c.id.toString() === selectedCustomer)!.name } : null}
-              onChange={(selected) => setSelectedCustomer(selected ? selected.value : '')}
-              options={customers.map(customer => ({ value: customer.id.toString(), label: customer.name }))}
-              isSearchable
-              placeholder="Search or select a customer..."
-              className="react-select-container"
-              classNamePrefix="react-select"
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode ? '#374151' : 'white',
-                  borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode ? '#374151' : 'white',
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode
-                    ? state.isFocused ? '#4B5563' : '#374151'
-                    : state.isFocused ? '#F3F4F6' : 'white',
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-                input: (provided) => ({
-                  ...provided,
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-              }}
-            />
+            {mounted ? (
+              <Select<CustomerOption>
+                instanceId="customer-select"
+                id="customer"
+                value={customers.find(c => c.id.toString() === selectedCustomer) ? 
+                  { value: selectedCustomer, label: customers.find(c => c.id.toString() === selectedCustomer)!.name } : null}
+                onChange={(selected) => setSelectedCustomer(selected ? selected.value : '')}
+                options={customers.map(customer => ({ value: customer.id.toString(), label: customer.name }))}
+                isSearchable
+                placeholder="Search or select a customer..."
+                className="react-select-container"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode ? '#374151' : 'white',
+                    borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
+                  }),
+                  menu: (provided) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode ? '#374151' : 'white',
+                  }),
+                  option: (provided, state) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode
+                      ? state.isFocused ? '#4B5563' : '#374151'
+                      : state.isFocused ? '#F3F4F6' : 'white',
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                  input: (provided) => ({
+                    ...provided,
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                }}
+              />
+            ) : (
+              <select
+                id="customer"
+                value={selectedCustomer}
+                onChange={(e) => setSelectedCustomer(e.target.value)}
+                className={inputStyle}
+              >
+                <option value="">Search or select a customer...</option>
+                {customers.map(customer => (
+                  <option key={customer.id} value={customer.id.toString()}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="mb-6">
@@ -251,52 +270,69 @@ export default function ReceiptEntry() {
             <label htmlFor="cashBankAccount" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Cash/Bank Account *
             </label>
-            <Select<AccountOption>
-              id="cashBankAccount"
-              value={accountOptions.find(acc => acc.value === selectedAccount) || null}
-              onChange={(selected) => setSelectedAccount(selected ? selected.value : '')}
-              options={accountOptions}
-              isSearchable
-              placeholder="Select cash or bank account..."
-              className="react-select-container"
-              classNamePrefix="react-select"
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode ? '#374151' : 'white',
-                  borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode ? '#374151' : 'white',
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  backgroundColor: isDarkMode
-                    ? state.isFocused ? '#4B5563' : '#374151'
-                    : state.isFocused ? '#F3F4F6' : 'white',
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-                input: (provided) => ({
-                  ...provided,
-                  color: isDarkMode ? 'white' : 'black',
-                }),
-              }}
-              formatOptionLabel={(option) => (
-                <div className="flex justify-between items-center">
-                  <span>{option.label.split(' - Balance:')[0]}</span>
-                  <span className={`text-sm font-medium ${
-                    option.balance >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {formatCurrency(option.balance)}
-                  </span>
-                </div>
-              )}
-            />
+            {mounted ? (
+              <Select<AccountOption>
+                instanceId="account-select"
+                id="cashBankAccount"
+                value={accountOptions.find(acc => acc.value === selectedAccount) || null}
+                onChange={(selected) => setSelectedAccount(selected ? selected.value : '')}
+                options={accountOptions}
+                isSearchable
+                placeholder="Select cash or bank account..."
+                className="react-select-container"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode ? '#374151' : 'white',
+                    borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
+                  }),
+                  menu: (provided) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode ? '#374151' : 'white',
+                  }),
+                  option: (provided, state) => ({
+                    ...provided,
+                    backgroundColor: isDarkMode
+                      ? state.isFocused ? '#4B5563' : '#374151'
+                      : state.isFocused ? '#F3F4F6' : 'white',
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                  input: (provided) => ({
+                    ...provided,
+                    color: isDarkMode ? 'white' : 'black',
+                  }),
+                }}
+                formatOptionLabel={(option) => (
+                  <div className="flex justify-between items-center">
+                    <span>{option.label.split(' - Balance:')[0]}</span>
+                    <span className={`text-sm font-medium ${
+                      option.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(option.balance)}
+                    </span>
+                  </div>
+                )}
+              />
+            ) : (
+              <select
+                id="cashBankAccount"
+                value={selectedAccount}
+                onChange={(e) => setSelectedAccount(e.target.value)}
+                className={inputStyle}
+              >
+                <option value="">Select cash or bank account...</option>
+                {cashBankAccounts.map(account => (
+                  <option key={account.id} value={account.id.toString()}>
+                    {account.name} ({account.account_type}) - Balance: {formatCurrency(account.current_balance)}
+                  </option>
+                ))}
+              </select>
+            )}
             <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               * This amount will be added to the selected account balance
             </p>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit2, Truck, Moon, Sun, Trash2, Info, Calendar, MapPin } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Truck, Moon, Sun, Trash2, Calendar } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 import Loading from '@/components/Loading'
 

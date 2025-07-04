@@ -5,10 +5,7 @@ import {
   ArrowLeft,
   Calendar,
   Phone,
-  Users,
-  Search,
   Clock,
-  Tag as TagIcon,
   Sun,
   Moon,
 } from "lucide-react"

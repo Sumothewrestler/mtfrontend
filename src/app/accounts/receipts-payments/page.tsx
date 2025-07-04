@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Moon, Sun, ArrowUpCircle, ArrowDownCircle, Building, FileText, DollarSign, Calendar, AlertCircle, CheckCircle, CreditCard, Receipt } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -63,24 +63,8 @@ export default function ReceiptPaymentPage() {
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchBusinesses()
-    fetchAllLedgers()
-    fetchCashBankAccounts()
-  }, [])
-
-  // Filter ledgers when business changes
-  useEffect(() => {
-    if (formData.business) {
-      setFilteredLedgers(ledgers.filter(ledger => ledger.business === formData.business))
-    } else {
-      setFilteredLedgers(ledgers)
-    }
-    setFormData(prev => ({ ...prev, ledger: '' }))
-  }, [formData.business, ledgers])
-
-  const fetchBusinesses = async () => {
+  // Memoize fetch functions to prevent unnecessary re-renders
+  const fetchBusinesses = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}businesses/`)
       if (response.ok) {
@@ -90,9 +74,9 @@ export default function ReceiptPaymentPage() {
     } catch (error) {
       console.error('Error fetching businesses:', error)
     }
-  }
+  }, [API_BASE_URL])
 
-  const fetchAllLedgers = async () => {
+  const fetchAllLedgers = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}ledgers/`)
       if (response.ok) {
@@ -103,9 +87,9 @@ export default function ReceiptPaymentPage() {
     } catch (error) {
       console.error('Error fetching ledgers:', error)
     }
-  }
+  }, [API_BASE_URL])
 
-  const fetchCashBankAccounts = async () => {
+  const fetchCashBankAccounts = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}cash-bank-accounts/`)
       if (response.ok) {
@@ -115,7 +99,24 @@ export default function ReceiptPaymentPage() {
     } catch (error) {
       console.error('Error fetching cash bank accounts:', error)
     }
-  }
+  }, [API_BASE_URL])
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchBusinesses()
+    fetchAllLedgers()
+    fetchCashBankAccounts()
+  }, [fetchBusinesses, fetchAllLedgers, fetchCashBankAccounts])
+
+  // Filter ledgers when business changes
+  useEffect(() => {
+    if (formData.business) {
+      setFilteredLedgers(ledgers.filter(ledger => ledger.business === formData.business))
+    } else {
+      setFilteredLedgers(ledgers)
+    }
+    setFormData(prev => ({ ...prev, ledger: '' }))
+  }, [formData.business, ledgers])
 
   const handleInputChange = (field: keyof ReceiptPaymentFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -156,7 +157,6 @@ export default function ReceiptPaymentPage() {
       })
 
       if (response.ok) {
-        const transaction = await response.json()
         showMessage('success', `${formData.type} recorded successfully!`)
         
         // Reset form
@@ -173,7 +173,7 @@ export default function ReceiptPaymentPage() {
         const errorData = await response.json()
         showMessage('error', errorData.errors ? String(Object.values(errorData.errors)[0]) : `Error recording ${formData.type.toLowerCase()}`)
       }
-    } catch (error) {
+    } catch {
       showMessage('error', `Network error recording ${formData.type.toLowerCase()}`)
     } finally {
       setIsLoading(false)

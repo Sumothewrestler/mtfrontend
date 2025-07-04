@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Moon, Sun, BarChart3, Download, Filter, Search, Calendar, FileText, Database, Eye, Package, TrendingUp, AlertTriangle, Users, ArrowLeft } from 'lucide-react'
+import { Moon, Sun, Filter, Calendar, FileText, Database, Package, Users, ArrowLeft, Download, TrendingUp, TrendingDown} from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -114,24 +114,7 @@ export default function MaterialReportsPage() {
     return filtered
   }
 
-  const calculateSummaryStats = () => {
-    const totalMaterials = materialReports.length
-    const totalNeed = materialReports.reduce((sum, report) => sum + report.total_need, 0)
-    const totalOffer = materialReports.reduce((sum, report) => sum + report.total_offer, 0)
-    const shortfallMaterials = materialReports.filter(report => report.total_need > report.total_offer).length
-    const surplusMaterials = materialReports.filter(report => report.total_offer > report.total_need).length
-
-    return {
-      totalMaterials,
-      totalNeed,
-      totalOffer,
-      shortfallMaterials,
-      surplusMaterials,
-      netBalance: totalOffer - totalNeed
-    }
-  }
-
-  const exportToCSV = () => {
+  const exportToCSV = useCallback(() => {
     const csvContent = [
       ['Material Name', 'Total Need', 'Total Offer', 'Balance', 'Status'],
       ...filteredReports.map(report => [
@@ -153,7 +136,24 @@ export default function MaterialReportsPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
+  }, [filteredReports])
+
+  const calculateSummaryStats = useCallback(() => {
+    const totalMaterials = materialReports.length
+    const totalNeed = materialReports.reduce((sum, report) => sum + report.total_need, 0)
+    const totalOffer = materialReports.reduce((sum, report) => sum + report.total_offer, 0)
+    const shortfallMaterials = materialReports.filter(report => report.total_need > report.total_offer).length
+    const surplusMaterials = materialReports.filter(report => report.total_offer > report.total_need).length
+
+    return {
+      totalMaterials,
+      totalNeed,
+      totalOffer,
+      shortfallMaterials,
+      surplusMaterials,
+      netBalance: totalOffer - totalNeed
+    }
+  }, [materialReports])
 
   const summaryStats = calculateSummaryStats()
 
@@ -176,13 +176,24 @@ export default function MaterialReportsPage() {
                 </h1>
               </div>
             </div>
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={exportToCSV}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm ${
+                  isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'
+                } text-white`}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </button>
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+                aria-label="Toggle dark mode"
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -190,6 +201,73 @@ export default function MaterialReportsPage() {
       {/* Main Content */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8">
         
+        {/* Search and Summary Stats */}
+        <div className="mb-6 space-y-4">
+          {/* Search Bar */}
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4`}>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search materials..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Materials</p>
+                  <p className="text-2xl font-bold">{summaryStats.totalMaterials}</p>
+                </div>
+                <Package className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Need</p>
+                  <p className="text-2xl font-bold text-blue-600">{summaryStats.totalNeed}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Offer</p>
+                  <p className="text-2xl font-bold text-green-600">{summaryStats.totalOffer}</p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Net Balance</p>
+                  <p className={`text-2xl font-bold ${
+                    summaryStats.netBalance > 0 ? 'text-green-600' : 
+                    summaryStats.netBalance < 0 ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {summaryStats.netBalance > 0 ? '+' : ''}{summaryStats.netBalance}
+                  </p>
+                </div>
+                <Filter className="h-8 w-8 text-gray-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Material-Wise Report Table */}
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg mb-6`}>
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Moon, Sun, Plus, ArrowLeft, Calendar, FileText, Database } from 'lucide-react'
+import { Moon, Sun, ArrowLeft, Calendar, FileText, Database } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 

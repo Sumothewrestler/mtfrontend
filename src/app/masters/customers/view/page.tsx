@@ -13,7 +13,7 @@ import {
   X,
   ArrowUp,
   ArrowDown,
-  Tag as TagIcon,
+  Tag ,
   Users
 } from "lucide-react"
 import { motion } from "framer-motion"

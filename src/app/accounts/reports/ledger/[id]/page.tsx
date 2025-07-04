@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Moon, Sun, ArrowLeft, Calendar, FileText, Download, TrendingUp, TrendingDown } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -56,7 +56,7 @@ export default function LedgerDetailReportPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [entries, setEntries] = useState<TransactionEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [openingBalance, setOpeningBalance] = useState(0)
+  const [openingBalance] = useState(0)
   const [closingBalance, setClosingBalance] = useState(0)
 
   // API Base URL
@@ -72,22 +72,8 @@ export default function LedgerDetailReportPage() {
     setToDate(lastDay.toISOString().split('T')[0])
   }, [])
 
-  // Fetch data when component mounts or date range changes
-  useEffect(() => {
-    if (ledgerId && fromDate && toDate) {
-      fetchLedgerDetails()
-      fetchTransactions()
-    }
-  }, [ledgerId, fromDate, toDate])
-
-  // Process transactions into entries when transactions change
-  useEffect(() => {
-    if (transactions.length > 0 && ledger) {
-      processTransactions()
-    }
-  }, [transactions, ledger])
-
-  const fetchLedgerDetails = async () => {
+  // Memoize fetch functions to prevent unnecessary re-renders
+  const fetchLedgerDetails = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}ledgers/${ledgerId}/`)
       if (response.ok) {
@@ -97,9 +83,9 @@ export default function LedgerDetailReportPage() {
     } catch (error) {
       console.error('Error fetching ledger details:', error)
     }
-  }
+  }, [API_BASE_URL, ledgerId])
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true)
       const response = await fetch(
@@ -114,9 +100,9 @@ export default function LedgerDetailReportPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [API_BASE_URL, ledgerId, fromDate, toDate])
 
-  const processTransactions = () => {
+  const processTransactions = useCallback(() => {
     if (!ledger) return
 
     const processedEntries: TransactionEntry[] = []
@@ -185,7 +171,22 @@ export default function LedgerDetailReportPage() {
 
     setEntries(processedEntries)
     setClosingBalance(runningBalance)
-  }
+  }, [ledger, transactions, openingBalance])
+
+  // Fetch data when component mounts or date range changes
+  useEffect(() => {
+    if (ledgerId && fromDate && toDate) {
+      fetchLedgerDetails()
+      fetchTransactions()
+    }
+  }, [ledgerId, fromDate, toDate, fetchLedgerDetails, fetchTransactions])
+
+  // Process transactions into entries when transactions change
+  useEffect(() => {
+    if (transactions.length > 0 && ledger) {
+      processTransactions()
+    }
+  }, [transactions, ledger, processTransactions])
 
   const handleDateRangeChange = () => {
     if (fromDate && toDate) {

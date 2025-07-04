@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Moon, Sun, Calendar, Truck, Eye, TrendingUp, BarChart3 } from 'lucide-react'
+import { Moon, Sun, Calendar, Truck, Eye, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 

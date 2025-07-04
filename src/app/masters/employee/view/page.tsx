@@ -9,8 +9,6 @@ import {
   Sun, 
   Moon, 
   Plus,
-  ToggleLeft,
-  ToggleRight
 } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
