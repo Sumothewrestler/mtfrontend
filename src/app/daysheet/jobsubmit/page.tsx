@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, Search, ChevronDown } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
 interface Customer {
@@ -38,6 +38,8 @@ export default function JobSubmitPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [tractors, setTractors] = useState<Tractor[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('')
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<JobSubmission>({
@@ -112,6 +114,18 @@ export default function JobSubmitPage() {
     })
   }, [watchJobs, watchDate, setValue])
 
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
+  )
+
+  // Add this function to handle customer selection
+  const handleCustomerSelect = (customerId: number, customerName: string, index: number) => {
+    setValue(`jobs.${index}.customer`, customerId)
+    setCustomerSearchTerm(customerName)
+    setIsCustomerDropdownOpen(false)
+  }
+
   const onSubmit = async (data: JobSubmission) => {
     setIsLoading(true)
     try {
@@ -147,7 +161,7 @@ export default function JobSubmitPage() {
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/daysheet/daysheetmain" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
+            <Link href="/" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
               <ArrowLeft className="h-6 w-6" />
             </Link>
             <h1 className="text-2xl font-bold text-blue-600">Submit Jobs</h1>
@@ -181,19 +195,64 @@ export default function JobSubmitPage() {
               
               <div className="mb-4">
                 <label htmlFor={`jobs.${index}.customer`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Customer</label>
-                <Controller
-                  name={`jobs.${index}.customer` as const}
-                  control={control}
-                  rules={{ required: "Customer is required" }}
-                  render={({ field }) => (
-                    <select {...field} className={inputStyle}>
-                      <option value="">Select a customer</option>
-                      {customers.map((customer) => (
-                        <option key={customer.id} value={customer.id}>{customer.name}</option>
-                      ))}
-                    </select>
-                  )}
-                />
+                <div className="relative">
+                  <Controller
+                    name={`jobs.${index}.customer` as const}
+                    control={control}
+                    rules={{ required: "Customer is required" }}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <div className="flex items-center">
+                          <input
+                            type="text"
+                            placeholder="Search customers..."
+                            value={customerSearchTerm}
+                            onChange={(e) => {
+                              setCustomerSearchTerm(e.target.value)
+                              setIsCustomerDropdownOpen(true)
+                            }}
+                            onFocus={() => setIsCustomerDropdownOpen(true)}
+                            className={`${inputStyle} pr-10`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                            className={`absolute right-2 p-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                          >
+                            <ChevronDown size={16} />
+                          </button>
+                        </div>
+                        
+                        {isCustomerDropdownOpen && (
+                          <div className={`absolute z-50 w-full mt-1 max-h-60 overflow-y-auto rounded-md shadow-lg ${
+                            isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-300'
+                          }`}>
+                            {filteredCustomers.length > 0 ? (
+                              filteredCustomers.map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  onClick={() => handleCustomerSelect(customer.id, customer.name, index)}
+                                  className={`w-full text-left px-4 py-2 hover:bg-blue-100 ${
+                                    isDarkMode ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-900'
+                                  }`}
+                                >
+                                  {customer.name}
+                                </button>
+                              ))
+                            ) : (
+                              <div className={`px-4 py-2 text-sm ${
+                                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                No customers found
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  />
+                </div>
                 {errors.jobs?.[index]?.customer && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].customer.message}</p>}
               </div>
 

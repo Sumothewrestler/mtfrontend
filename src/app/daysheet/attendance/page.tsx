@@ -286,18 +286,6 @@ export default function Attendance() {
               />
             </div>
             
-            {/* Status indicator to show active filter status */}
-            <div className="mb-6 flex items-center">
-              <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} italic`}>
-                {!showInactiveEmployees && (
-                  <span className="flex items-center">
-                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Showing only active employees ({filteredEmployees.length}/{employees.length})
-                  </span>
-                )}
-              </div>
-            </div>
-            
             <div className="mb-6">
               <h2 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Employee Attendance</h2>
               

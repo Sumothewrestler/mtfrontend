@@ -4,32 +4,47 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Moon, Sun } from 'lucide-react'
 import Select from 'react-select'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type Customer = {
   id: number
   name: string
 }
 
-type PaymentMethod = 'Cash' | 'Gpay' | 'Discount'
+type CashBankAccount = {
+  id: number
+  name: string
+  account_type: 'Cash' | 'Bank'
+  current_balance: number
+}
 
 interface CustomerOption {
   value: string;
   label: string;
 }
 
+interface AccountOption {
+  value: string;
+  label: string;
+  balance: number;
+  type: string;
+}
+
 export default function ReceiptEntry() {
   const [date, setDate] = useState('')
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [cashBankAccounts, setCashBankAccounts] = useState<CashBankAccount[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<string>('')
+  const [selectedAccount, setSelectedAccount] = useState<string>('')
   const [amountReceived, setAmountReceived] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash')
   const [description, setDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   useEffect(() => {
     fetchCustomers()
+    fetchCashBankAccounts()
   }, [])
 
   const fetchCustomers = async () => {
@@ -46,10 +61,30 @@ export default function ReceiptEntry() {
     }
   }
 
+  const fetchCashBankAccounts = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}cash-bank-accounts/`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch cash/bank accounts')
+      }
+      const data = await response.json()
+      setCashBankAccounts(data)
+    } catch (error) {
+      console.error('Error fetching cash/bank accounts:', error)
+      setError('Failed to load cash/bank accounts. Please try again later.')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    if (!selectedAccount) {
+      setError('Please select a cash/bank account')
+      setIsLoading(false)
+      return
+    }
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}receipts/`, {
@@ -61,7 +96,8 @@ export default function ReceiptEntry() {
           date,
           customer: selectedCustomer,
           amount_received: parseFloat(amountReceived),
-          payment_method: paymentMethod,
+          cash_bank_account: selectedAccount,
+          payment_method: cashBankAccounts.find(acc => acc.id.toString() === selectedAccount)?.account_type || 'Cash', // For backwards compatibility
           description
         }),
       })
@@ -73,12 +109,16 @@ export default function ReceiptEntry() {
       const result = await response.json()
       console.log('Receipt submitted:', result)
       alert('Receipt submitted successfully!')
+      
       // Reset form
       setDate('')
       setSelectedCustomer('')
+      setSelectedAccount('')
       setAmountReceived('')
-      setPaymentMethod('Cash')
       setDescription('')
+      
+      // Refresh cash/bank accounts to show updated balances
+      fetchCashBankAccounts()
     } catch (error) {
       console.error('Error submitting receipt:', error)
       setError('Failed to submit receipt. Please try again.')
@@ -86,6 +126,25 @@ export default function ReceiptEntry() {
       setIsLoading(false)
     }
   }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(amount)
+  }
+
+  const accountOptions: AccountOption[] = cashBankAccounts.map(account => ({
+    value: account.id.toString(),
+    label: `${account.name} (${account.account_type}) - Balance: ${formatCurrency(account.current_balance)}`,
+    balance: account.current_balance,
+    type: account.account_type
+  }))
+
+  const inputStyle = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+    isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+  }`
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
@@ -95,10 +154,10 @@ export default function ReceiptEntry() {
             <Link href="/daysheet/daysheetmain" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
               <ArrowLeft className="h-6 w-6" />
             </Link>
-            <h1 className="text-2xl font-bold">Receipt Entry</h1>
+            <h1 className="text-2xl font-bold text-blue-600">Receipt Entry</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -113,6 +172,7 @@ export default function ReceiptEntry() {
             {error}
           </div>
         )}
+        
         <form onSubmit={handleSubmit} className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-8`}>
           <div className="mb-6">
             <label htmlFor="date" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -124,18 +184,18 @@ export default function ReceiptEntry() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-              }`}
+              className={inputStyle}
             />
           </div>
+
           <div className="mb-6">
             <label htmlFor="customer" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Customer Name
             </label>
             <Select<CustomerOption>
               id="customer"
-              value={customers.find(c => c.id.toString() === selectedCustomer) ? { value: selectedCustomer, label: customers.find(c => c.id.toString() === selectedCustomer)!.name } : null}
+              value={customers.find(c => c.id.toString() === selectedCustomer) ? 
+                { value: selectedCustomer, label: customers.find(c => c.id.toString() === selectedCustomer)!.name } : null}
               onChange={(selected) => setSelectedCustomer(selected ? selected.value : '')}
               options={customers.map(customer => ({ value: customer.id.toString(), label: customer.name }))}
               isSearchable
@@ -155,12 +215,8 @@ export default function ReceiptEntry() {
                 option: (provided, state) => ({
                   ...provided,
                   backgroundColor: isDarkMode
-                    ? state.isFocused
-                      ? '#4B5563'
-                      : '#374151'
-                    : state.isFocused
-                      ? '#F3F4F6'
-                      : 'white',
+                    ? state.isFocused ? '#4B5563' : '#374151'
+                    : state.isFocused ? '#F3F4F6' : 'white',
                   color: isDarkMode ? 'white' : 'black',
                 }),
                 singleValue: (provided) => ({
@@ -174,6 +230,7 @@ export default function ReceiptEntry() {
               }}
             />
           </div>
+
           <div className="mb-6">
             <label htmlFor="amountReceived" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Amount Received
@@ -184,30 +241,67 @@ export default function ReceiptEntry() {
               value={amountReceived}
               onChange={(e) => setAmountReceived(e.target.value)}
               required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-              }`}
+              step="0.01"
+              min="0"
+              className={inputStyle}
             />
           </div>
+
           <div className="mb-6">
-            <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Payment Method
+            <label htmlFor="cashBankAccount" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Cash/Bank Account *
             </label>
-            <div className={`p-4 rounded-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-              {(['Cash', 'Gpay', 'Discount'] as PaymentMethod[]).map((method) => (
-                <label key={method} className="inline-flex items-center mr-6">
-                  <input
-                    type="radio"
-                    value={method}
-                    checked={paymentMethod === method}
-                    onChange={() => setPaymentMethod(method)}
-                    className="form-radio h-4 w-4 text-blue-600"
-                  />
-                  <span className={`ml-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{method}</span>
-                </label>
-              ))}
-            </div>
+            <Select<AccountOption>
+              id="cashBankAccount"
+              value={accountOptions.find(acc => acc.value === selectedAccount) || null}
+              onChange={(selected) => setSelectedAccount(selected ? selected.value : '')}
+              options={accountOptions}
+              isSearchable
+              placeholder="Select cash or bank account..."
+              className="react-select-container"
+              classNamePrefix="react-select"
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: isDarkMode ? '#374151' : 'white',
+                  borderColor: isDarkMode ? '#4B5563' : '#D1D5DB',
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: isDarkMode ? '#374151' : 'white',
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: isDarkMode
+                    ? state.isFocused ? '#4B5563' : '#374151'
+                    : state.isFocused ? '#F3F4F6' : 'white',
+                  color: isDarkMode ? 'white' : 'black',
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: isDarkMode ? 'white' : 'black',
+                }),
+                input: (provided) => ({
+                  ...provided,
+                  color: isDarkMode ? 'white' : 'black',
+                }),
+              }}
+              formatOptionLabel={(option) => (
+                <div className="flex justify-between items-center">
+                  <span>{option.label.split(' - Balance:')[0]}</span>
+                  <span className={`text-sm font-medium ${
+                    option.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatCurrency(option.balance)}
+                  </span>
+                </div>
+              )}
+            />
+            <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              * This amount will be added to the selected account balance
+            </p>
           </div>
+
           <div className="mb-6">
             <label htmlFor="description" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Description
@@ -216,12 +310,12 @@ export default function ReceiptEntry() {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-              }`}
+              className={inputStyle}
               rows={3}
+              placeholder="Optional description..."
             />
           </div>
+
           <button
             type="submit"
             className={`w-full py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${
@@ -231,7 +325,7 @@ export default function ReceiptEntry() {
             }`}
             disabled={isLoading}
           >
-            {isLoading ? 'Submitting...' : 'Submit'}
+            {isLoading ? 'Submitting...' : 'Submit Receipt'}
           </button>
         </form>
       </main>

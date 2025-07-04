@@ -180,29 +180,28 @@ export default function EditCustomerPage() {
           } border border-orange-200`}
         >
           {/* Header section with stacked circular shapes - Orange theme for edit */}
-          <div className="relative h-48">
+          <div className="relative h-32">
             {/* Base background */}
             <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 rounded-t-2xl"></div>
 
             {/* Stacked circular shapes from top-right */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-amber-400 opacity-20 translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-orange-300 opacity-30 translate-x-1/3 -translate-y-1/3"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-yellow-200 opacity-40 translate-x-1/4 -translate-y-1/4"></div>
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-amber-400 opacity-20 translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute top-0 right-0 w-36 h-36 rounded-full bg-orange-300 opacity-30 translate-x-1/3 -translate-y-1/3"></div>
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-yellow-200 opacity-40 translate-x-1/4 -translate-y-1/4"></div>
 
             {/* Content overlay */}
-            <div className="relative z-10 h-full px-6 py-8 sm:p-10 flex flex-col justify-center">
+            <div className="relative z-10 h-full px-6 py-4 sm:p-6 flex flex-col justify-center">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                  <div className="flex items-center mb-2">
+                  <div className="flex items-center mb-1">
                     <Link
                       href="/masters/customers/view"
                       className="mr-3 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200"
                     >
                       <ArrowLeft className="h-5 w-5 text-white" />
                     </Link>
-                    <h1 className="text-3xl font-bold text-white drop-shadow-md">Edit Customer</h1>
+                    <h1 className="text-2xl font-bold text-white drop-shadow-md">Edit Customer</h1>
                   </div>
-                  <p className="mt-2 text-white/80 drop-shadow">Update customer information and settings</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Link 
@@ -272,12 +271,12 @@ export default function EditCustomerPage() {
                     <label htmlFor="address" className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Address
                     </label>
-                    <textarea
+                    <input
+                      type="text"
                       id="address"
                       name="address"
                       value={customer.address}
                       onChange={handleChange}
-                      rows={3}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 ${
                         isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'
                       }`}

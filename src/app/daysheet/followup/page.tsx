@@ -11,6 +11,8 @@ import {
   Phone,
   Tag as TagIcon,
   Users,
+  Sun,
+  Moon,
 } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -68,7 +70,7 @@ export default function NewFollowUpPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const { isDarkMode} = useDarkMode()
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [sortOption, setSortOption] = useState<SortOption>("nameAsc")
@@ -302,183 +304,178 @@ export default function NewFollowUpPage() {
             isDarkMode ? "bg-gray-800" : "bg-white"
           } border border-indigo-200`}
         >
-          {/* Header section with stacked circular shapes */}
-          <div className="relative h-48">
-            {/* Base background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl"></div>
-
-            {/* Stacked circular shapes from top-right */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-teal-400 opacity-20 translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-emerald-300 opacity-30 translate-x-1/3 -translate-y-1/3"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-cyan-200 opacity-40 translate-x-1/4 -translate-y-1/4"></div>
-
-            {/* Content overlay */}
-            <div className="relative z-10 h-full px-6 py-8 sm:p-10 flex flex-col justify-center">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Link
-                      href="/reports/reportsmain"
-                      className="mr-3 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200"
-                    >
-                      <ArrowLeft className="h-5 w-5 text-white" />
-                    </Link>
-                    <h1 className="text-3xl font-bold text-white drop-shadow-md">New Follow Up</h1>
+          {/* Simple Header - Matching cash bank create page style */}
+          <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
+            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+              <div className="flex items-center">
+                <Link 
+                  href="/" 
+                  className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </Link>
+                <h1 className="text-2xl font-bold">Follow Up</h1>
+              </div>
+              <div className="flex items-center space-x-2">
+                {/* Desktop Search Field */}
+                <div className="hidden sm:flex relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Search customers..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-60"
+                  />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Quick Filters */}
-                  <div className="flex gap-2 mr-2">
-                    <button
-                      onClick={() => setFilterOptions(prev => ({...prev, selectedGroups: []}))}
-                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                        filterOptions.selectedGroups.length === 0
-                          ? "bg-white text-emerald-600"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      All
-                    </button>
-                    {["1", "2", "3"].map((group) => (
-                      <button
-                        key={group}
-                        onClick={() => setFilterOptions(prev => ({
-                          ...prev,
-                          selectedGroups: [group]
-                        }))}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                          filterOptions.selectedGroups.includes(group)
-                            ? "bg-white text-emerald-600"
-                            : "bg-white/10 text-white hover:bg-white/20"
-                        }`}
-                      >
-                        Group {group}
-                      </button>
-                    ))}
-                  </div>
 
-                  {/* Quick Tag Filters */}
-                  <div className="flex gap-2 mr-2 overflow-x-auto max-w-[300px] hide-scrollbar">
-                    <button
-                      onClick={() => setFilterOptions(prev => ({...prev, selectedTags: []}))}
-                      className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
-                        filterOptions.selectedTags.length === 0
-                          ? "bg-white text-emerald-600"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }`}
-                    >
-                      All Tags
-                    </button>
-                    {tags.map((tag) => (
-                      <button
-                        key={tag.id}
-                        onClick={() => toggleTagFilter(tag.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                          filterOptions.selectedTags.includes(tag.id)
-                            ? "bg-white"
-                            : "bg-white/10 hover:bg-white/20"
-                        }`}
-                        style={{
-                          color: filterOptions.selectedTags.includes(tag.id) ? tag.color : 'white',
-                        }}
-                      >
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        {tag.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Desktop Search Field - Hidden on Mobile */}
-                  <div className="hidden sm:flex relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search customers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9 pr-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white placeholder-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/50 w-60"
-                    />
-                  </div>
-
-                  {/* Mobile Search Icon - Only visible on mobile */}
-                  <div className="sm:hidden">
-                    <button
-                      onClick={() => setShowMobileSearch(!showMobileSearch)}
-                      className={`p-2 rounded-lg transition-colors duration-200 shadow-md mobile-search-toggle
-                        ${isDarkMode
-                          ? "bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                          : "bg-white/90 hover:bg-white text-gray-700 backdrop-blur-sm"
-                        } ${showMobileSearch ? "ring-2 ring-white/50" : ""}`}
-                    >
-                      <Search size={16} />
-                    </button>
-                  </div>
-
-                  {/* Filter Button */}
-                  <div className="relative">
-                    <button
-                      onClick={toggleFilter}
-                      className={`p-2 rounded-lg transition-colors duration-200 flex items-center gap-1.5 shadow-md
-                        ${isDarkMode
-                          ? "bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                          : "bg-white/90 hover:bg-white text-gray-700 backdrop-blur-sm"
-                        } ${showFilterPanel ? "ring-2 ring-white/50" : ""}`}
-                      aria-label="Filter and sort"
-                    >
-                      <SlidersHorizontal size={16} />
-                      <span className="hidden sm:inline text-sm">Filter</span>
-                      {(filterOptions.selectedTags.length > 0) && (
-                        <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {filterOptions.selectedTags.length}
-                        </span>
-                      )}
-                    </button>
-                  </div>
+                {/* Mobile Search Icon */}
+                <div className="sm:hidden">
+                  <button
+                    onClick={() => setShowMobileSearch(!showMobileSearch)}
+                    className={`p-2 rounded-lg transition-colors duration-200 shadow-md mobile-search-toggle
+                      ${isDarkMode
+                        ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                      } ${showMobileSearch ? "ring-2 ring-emerald-500" : ""}`}
+                  >
+                    <Search size={16} />
+                  </button>
                 </div>
+
+                {/* Filter Button */}
+                <div className="relative">
+                  <button
+                    onClick={toggleFilter}
+                    className={`p-2 rounded-lg transition-colors duration-200 flex items-center gap-1.5 shadow-md
+                      ${isDarkMode
+                        ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                      } ${showFilterPanel ? "ring-2 ring-emerald-500" : ""}`}
+                    aria-label="Filter and sort"
+                  >
+                    <SlidersHorizontal size={16} />
+                    <span className="hidden sm:inline text-sm">Filter</span>
+                    {(filterOptions.selectedTags.length > 0) && (
+                      <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {filterOptions.selectedTags.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={toggleDarkMode}
+                  className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+                  aria-label="Toggle dark mode"
+                >
+                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
               </div>
             </div>
-
-            {/* Mobile Search Input Field - Expandable */}
-            {showMobileSearch && (
-              <div className="absolute bottom-0 left-0 right-0 transform translate-y-full z-20 mobile-search-container">
-                <div className="relative bg-teal-600/95 backdrop-blur-sm p-3 rounded-b-xl shadow-lg border-t border-teal-500">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-white/70" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search customers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white placeholder-white/60 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => setShowMobileSearch(false)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Minimal connecting line */}
-            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-teal-200"></div>
-          </div>
+          </header>
 
           {/* Content Area */}
           <div className="px-6 pb-8 sm:px-10 sm:pb-10 pt-6">
             {error && (
               <div className={`mb-6 p-4 rounded-xl text-red-500 text-sm ${isDarkMode ? "bg-red-900/20" : "bg-red-50"}`}>
                 {error}
+              </div>
+            )}
+
+            {/* Compact Filter Controls - All in one line */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                {/* Quick Filters */}
+                <button
+                  onClick={() => setFilterOptions(prev => ({...prev, selectedGroups: []}))}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    filterOptions.selectedGroups.length === 0
+                      ? "bg-emerald-500 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  All
+                </button>
+                {["1", "2", "3"].map((group) => (
+                  <button
+                    key={group}
+                    onClick={() => setFilterOptions(prev => ({
+                      ...prev,
+                      selectedGroups: [group]
+                    }))}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                      filterOptions.selectedGroups.includes(group)
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Group {group}
+                  </button>
+                ))}
+
+                {/* Quick Tag Filters */}
+                <div className="flex gap-2 overflow-x-auto max-w-[300px] hide-scrollbar">
+                  <button
+                    onClick={() => setFilterOptions(prev => ({...prev, selectedTags: []}))}
+                    className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                      filterOptions.selectedTags.length === 0
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    All Tags
+                  </button>
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => toggleTagFilter(tag.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                        filterOptions.selectedTags.includes(tag.id)
+                          ? "bg-white"
+                          : "bg-gray-200 hover:bg-gray-300"
+                      }`}
+                      style={{
+                        color: filterOptions.selectedTags.includes(tag.id) ? tag.color : '#374151',
+                      }}
+                    >
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Search Input Field - Expandable */}
+            {showMobileSearch && (
+              <div className="mb-4 mobile-search-container">
+                <div className="relative bg-gray-100 dark:bg-gray-700 p-3 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search customers..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => setShowMobileSearch(false)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

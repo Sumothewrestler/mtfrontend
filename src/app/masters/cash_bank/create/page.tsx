@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, Moon, Sun, Banknote, Building2 } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type NewAccount = {
   name: string
@@ -14,7 +15,7 @@ type NewAccount = {
 
 export default function CreateCashBankAccount() {
   const router = useRouter()
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [isLoading, setIsLoading] = useState(false)
   const [newAccount, setNewAccount] = useState<NewAccount>({
     name: '',
@@ -22,6 +23,16 @@ export default function CreateCashBankAccount() {
     opening_balance: 0,
     opening_balance_type: 'Debit'
   })
+
+  const handleOpeningBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // If the field is empty or just contains 0, set it to empty string
+    if (value === '' || value === '0') {
+      setNewAccount(prev => ({ ...prev, opening_balance: 0 }))
+    } else {
+      setNewAccount(prev => ({ ...prev, opening_balance: parseFloat(value) || 0 }))
+    }
+  }
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,15 +71,15 @@ export default function CreateCashBankAccount() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Link 
-              href="/masters/cash_bank" 
+              href="/masters/mastermain" 
               className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}
             >
               <ArrowLeft className="h-6 w-6" />
             </Link>
-            <h1 className="text-2xl font-bold">Create Cash/Bank Account</h1>
+            <h1 className="text-2xl font-bold">Cash & Bank</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -80,18 +91,6 @@ export default function CreateCashBankAccount() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8`}>
-            <div className="mb-6">
-              <div className="flex items-center mb-4">
-                {newAccount.account_type === 'Cash' ? 
-                  <Banknote className="h-8 w-8 text-green-500 mr-3" /> : 
-                  <Building2 className="h-8 w-8 text-blue-500 mr-3" />
-                }
-                <h2 className="text-xl font-semibold">Account Details</h2>
-              </div>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Fill in the details below to create a new cash or bank account.
-              </p>
-            </div>
 
             <form onSubmit={handleCreateAccount} className="space-y-6">
               <div>
@@ -134,8 +133,8 @@ export default function CreateCashBankAccount() {
                   <input
                     type="number"
                     step="0.01"
-                    value={newAccount.opening_balance}
-                    onChange={(e) => setNewAccount(prev => ({ ...prev, opening_balance: parseFloat(e.target.value) || 0 }))}
+                    value={newAccount.opening_balance === 0 ? '' : newAccount.opening_balance}
+                    onChange={handleOpeningBalanceChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
                     }`}
@@ -160,22 +159,7 @@ export default function CreateCashBankAccount() {
                 </div>
               </div>
 
-              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-blue-50 border border-blue-200'}`}>
-                <h3 className={`font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-blue-800'}`}>
-                  Account Summary
-                </h3>
-                <div className="space-y-1 text-sm">
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Name:</span> {newAccount.name || 'Not specified'}
-                  </p>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Type:</span> {newAccount.account_type}
-                  </p>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Opening Balance:</span> ₹{Number(newAccount.opening_balance).toFixed(2)} ({newAccount.opening_balance_type})
-                  </p>
-                </div>
-              </div>
+
 
               <div className="flex justify-end space-x-4 pt-4">
                 <button

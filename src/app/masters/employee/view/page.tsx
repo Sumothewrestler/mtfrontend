@@ -8,13 +8,11 @@ import {
   Trash2, 
   Sun, 
   Moon, 
-  Search,
   Plus,
-  MoreVertical,
-  ExternalLink,
   ToggleLeft,
   ToggleRight
 } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 interface Employee {
   id: number
@@ -28,56 +26,32 @@ interface Employee {
 }
 
 export default function Page() {
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterRole, setFilterRole] = useState<string>('')
-  const [filterStatus, setFilterStatus] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'all'>('active')
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [successMessage, setSuccessMessage] = useState('')
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
-
-  // Toggle cells functionality
-  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
-
-  const toggleCell = (cellKey: string) => {
-    setExpandedCells(prev => ({
-      ...prev,
-      [cellKey]: !prev[cellKey]
-    }))
-  }
 
   useEffect(() => {
     fetchEmployees()
   }, [])
 
   useEffect(() => {
-    // Filter employees based on search term and filters
+    // Filter employees based on active tab
     let result = employees
     
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter(employee => 
-        employee.name.toLowerCase().includes(term) || 
-        employee.phone_number.includes(term)
-      )
-    }
-    
-    if (filterRole) {
-      result = result.filter(employee => employee.role === filterRole)
-    }
-    
-    if (filterStatus === 'active') {
+    if (activeTab === 'active') {
       result = result.filter(employee => employee.is_active)
-    } else if (filterStatus === 'inactive') {
+    } else if (activeTab === 'inactive') {
       result = result.filter(employee => !employee.is_active)
     }
+    // For 'all' tab, no filtering needed
     
     setFilteredEmployees(result)
-  }, [employees, searchTerm, filterRole, filterStatus])
+  }, [employees, activeTab])
 
   const fetchEmployees = async () => {
     setIsLoading(true)
@@ -153,6 +127,12 @@ export default function Page() {
     return new Date(dateString).toLocaleDateString(undefined, options)
   }
 
+  const getEmployeeCount = (status: 'active' | 'inactive' | 'all') => {
+    if (status === 'active') return employees.filter(emp => emp.is_active).length
+    if (status === 'inactive') return employees.filter(emp => !emp.is_active).length
+    return employees.length
+  }
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
@@ -163,21 +143,27 @@ export default function Page() {
             </Link>
             <h1 className="text-2xl font-bold">Employees</h1>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            <Link 
+              href="/masters/employee/create" 
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+                isDarkMode 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
+            >
+              <Plus size={18} />
+              <span>New</span>
+            </Link>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+              onClick={() => toggleDarkMode()}
+              className={`p-2 rounded-full transition-colors ${
+                isDarkMode ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              }`}
               aria-label="Toggle dark mode"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <Link 
-              href="/masters/employee/create" 
-              className={`p-2 rounded-md ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white flex items-center`}
-            >
-              <Plus size={20} className="mr-1" />
-              <span className="hidden sm:inline">Add Employee</span>
-            </Link>
           </div>
         </div>
       </header>
@@ -198,68 +184,37 @@ export default function Page() {
           </div>
         )}
 
-        {/* Search and Filter Section */}
-        <div className={`p-4 mb-6 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Search & Filters</h3>
-            <button
-              onClick={() => toggleCell('search')}
-              className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            >
-              {expandedCells['search'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-            </button>
-          </div>
-          <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 transition-all duration-200 ${expandedCells['search'] ? 'max-h-96' : 'max-h-20 overflow-hidden'}`}>
-            <div className="md:col-span-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by name or phone"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`pl-10 w-full px-4 py-2 rounded-md border ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md border ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        {/* Tab Navigation */}
+        <div className={`mb-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md`}>
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            {(['active', 'inactive', 'all'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
+                  activeTab === tab
+                    ? isDarkMode
+                      ? 'text-blue-400 border-b-2 border-blue-400'
+                      : 'text-blue-600 border-b-2 border-blue-600'
+                    : isDarkMode
+                      ? 'text-gray-400 hover:text-gray-300'
+                      : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
-                <option value="">All Roles</option>
-                <option value="Driver">Driver</option>
-                <option value="Loadman">Loadman</option>
-              </select>
-            </div>
-            
-            <div>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className={`w-full px-4 py-2 rounded-md border ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
+                <span className="capitalize">{tab}</span>
+                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                  activeTab === tab
+                    ? isDarkMode
+                      ? 'bg-blue-900 text-blue-200'
+                      : 'bg-blue-100 text-blue-800'
+                    : isDarkMode
+                      ? 'bg-gray-700 text-gray-300'
+                      : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {getEmployeeCount(tab)}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -269,19 +224,7 @@ export default function Page() {
           </div>
         ) : filteredEmployees.length === 0 ? (
           <div className={`text-center p-8 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-            <p className="text-lg">No employees found matching your criteria.</p>
-            <button 
-              onClick={() => {
-                setSearchTerm('')
-                setFilterRole('')
-                setFilterStatus('')
-              }}
-              className={`mt-4 px-4 py-2 rounded-md ${
-                isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
-              } text-white`}
-            >
-              Clear Filters
-            </button>
+            <p className="text-lg">No {activeTab === 'all' ? '' : activeTab} employees found.</p>
           </div>
         ) : (
           <>
@@ -346,40 +289,44 @@ export default function Page() {
                         {formatDate(employee.date_of_joining)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          employee.is_active 
-                            ? isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800' 
-                            : isDarkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <button
+                          onClick={() => toggleEmployeeStatus(employee)}
+                          className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            employee.is_active 
+                              ? isDarkMode 
+                                ? 'bg-green-800 text-green-200 hover:bg-green-700' 
+                                : 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : isDarkMode 
+                                ? 'bg-red-800 text-red-200 hover:bg-red-700' 
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
                           {employee.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <button
-                            onClick={() => toggleEmployeeStatus(employee)}
-                            className={`p-1 rounded-full ${
-                              employee.is_active 
-                                ? isDarkMode ? 'bg-red-800 hover:bg-red-700' : 'bg-red-100 hover:bg-red-200 text-red-600' 
-                                : isDarkMode ? 'bg-green-800 hover:bg-green-700' : 'bg-green-100 hover:bg-green-200 text-green-600'
-                            }`}
-                            title={employee.is_active ? 'Deactivate' : 'Activate'}
-                          >
-                            <ExternalLink size={18} />
-                          </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex justify-end items-center space-x-2">
                           <Link 
                             href={`/masters/employee/edit/${employee.id}`}
-                            className={`p-1 rounded-full ${isDarkMode ? 'bg-blue-800 hover:bg-blue-700' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`}
-                            title="Edit"
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center space-x-1 ${
+                              isDarkMode 
+                                ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' 
+                                : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            }`}
                           >
-                            <Edit size={18} />
+                            <Edit size={14} />
+                            <span>Edit</span>
                           </Link>
                           <button
                             onClick={() => setConfirmDelete(employee.id)}
-                            className={`p-1 rounded-full ${isDarkMode ? 'bg-red-800 hover:bg-red-700' : 'bg-red-100 hover:bg-red-200 text-red-600'}`}
-                            title="Delete"
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center space-x-1 ${
+                              isDarkMode 
+                                ? 'bg-red-800 text-red-200 hover:bg-red-700' 
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
+                            }`}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={14} />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -397,64 +344,45 @@ export default function Page() {
                   className={`rounded-lg shadow-md p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold">{employee.name}</h3>
-                      <div className="flex items-center mt-1">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full mr-2 ${
+                      <div className="flex items-center mt-1 space-x-2">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           employee.role === 'Driver' 
                             ? isDarkMode ? 'bg-purple-900 text-purple-200' : 'bg-purple-100 text-purple-800' 
                             : isDarkMode ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'
                         }`}>
                           {employee.role}
                         </span>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          employee.is_active 
-                            ? isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800' 
-                            : isDarkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <button
+                          onClick={() => toggleEmployeeStatus(employee)}
+                          className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            employee.is_active 
+                              ? isDarkMode ? 'bg-green-800 text-green-200 hover:bg-green-700' : 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : isDarkMode ? 'bg-red-800 text-red-200 hover:bg-red-700' : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
                           {employee.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </button>
                       </div>
                     </div>
-                    <div className="relative">
-                      <button 
-                        className={`p-1 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                        onClick={() => {
-                          setOpenDropdownId(openDropdownId === employee.id ? null : employee.id);
-                        }}
+                    <div className="flex items-center space-x-2 ml-2">
+                      <Link
+                        href={`/masters/employee/edit/${employee.id}`}
+                        className={`p-2 rounded-md transition-colors ${
+                          isDarkMode ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                        }`}
                       >
-                        <MoreVertical size={20} />
+                        <Edit size={16} />
+                      </Link>
+                      <button
+                        onClick={() => setConfirmDelete(employee.id)}
+                        className={`p-2 rounded-md transition-colors ${
+                          isDarkMode ? 'bg-red-800 text-red-200 hover:bg-red-700' : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
+                        <Trash2 size={16} />
                       </button>
-                      {openDropdownId === employee.id && (
-                        <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${isDarkMode ? 'bg-gray-700' : 'bg-white'} ring-1 ring-black ring-opacity-5 z-10`}>
-                          <div className="py-1">
-                            <Link
-                              href={`/masters/employee/edit/${employee.id}`}
-                              className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'}`}
-                            >
-                              Edit
-                            </Link>
-                            <button
-                              onClick={() => {
-                                toggleEmployeeStatus(employee);
-                                setOpenDropdownId(null);
-                              }}
-                              className={`block w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'}`}
-                            >
-                              {employee.is_active ? 'Deactivate' : 'Activate'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setConfirmDelete(employee.id);
-                                setOpenDropdownId(null);
-                              }}
-                              className={`block w-full text-left px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-600' : 'text-red-600 hover:bg-gray-100'}`}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm mt-2">

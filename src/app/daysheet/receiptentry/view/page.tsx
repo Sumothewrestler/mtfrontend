@@ -11,6 +11,8 @@ interface Receipt {
   amount_received: string
   payment_method: 'Cash' | 'Gpay' | 'Discount'
   description: string
+  account_name?: string  // NEW: For cash/bank integration
+  is_legacy_data?: boolean  // NEW: To identify old receipts
 }
 
 export default function ReceiptEntryViewPage() {
@@ -77,9 +79,37 @@ export default function ReceiptEntryViewPage() {
     })
   }
 
+  const formatCurrency = (amount: string) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(parseFloat(amount))
+  }
+
+  const getPaymentMethodDisplay = (receipt: Receipt) => {
+    if (receipt.is_legacy_data) {
+      return (
+        <div className="flex flex-col">
+          <span>{receipt.payment_method}</span>
+          <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            (Legacy)
+          </span>
+        </div>
+      )
+    }
+    
+    return receipt.account_name || receipt.payment_method
+  }
+
   const inputStyle = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
     isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
   }`
+
+  // Calculate totals
+  const totalAmount = receipts.reduce((sum, receipt) => sum + parseFloat(receipt.amount_received), 0)
+  const legacyCount = receipts.filter(r => r.is_legacy_data).length
+  const newCount = receipts.length - legacyCount
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
@@ -135,6 +165,30 @@ export default function ReceiptEntryViewPage() {
           </div>
         </div>
 
+        {receipts.length > 0 && (
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6 mb-8`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                <div className="text-2xl font-bold text-blue-600">{receipts.length}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Receipts</div>
+              </div>
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-green-50'}`}>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalAmount.toString())}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Amount</div>
+              </div>
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-yellow-50'}`}>
+                <div className="text-2xl font-bold text-yellow-600">{legacyCount}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Legacy Receipts</div>
+              </div>
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-purple-50'}`}>
+                <div className="text-2xl font-bold text-purple-600">{newCount}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Cash/Bank Integrated</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -143,18 +197,18 @@ export default function ReceiptEntryViewPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Amount Received</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Payment Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Account/Method</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {receipts.map((receipt) => (
-                  <tr key={receipt.id}>
+                  <tr key={receipt.id} className={receipt.is_legacy_data ? `${isDarkMode ? 'bg-gray-750' : 'bg-yellow-50'}` : ''}>
                     <td className="px-6 py-4 whitespace-nowrap">{formatDate(receipt.date)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{receipt.customer_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{parseFloat(receipt.amount_received).toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{receipt.payment_method}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{formatCurrency(receipt.amount_received)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{getPaymentMethodDisplay(receipt)}</td>
                     <td className="px-6 py-4">
                       <div className="max-w-xs overflow-hidden overflow-ellipsis">{receipt.description}</div>
                     </td>
@@ -171,6 +225,14 @@ export default function ReceiptEntryViewPage() {
                 ))}
               </tbody>
             </table>
+            
+            {receipts.length === 0 && !isLoading && (
+              <div className="text-center py-8">
+                <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  No receipts found for the selected date range.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

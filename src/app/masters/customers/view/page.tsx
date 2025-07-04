@@ -302,29 +302,28 @@ export default function CustomersPage() {
           } border border-blue-200`}
         >
           {/* Header section with stacked circular shapes - Blue theme */}
-          <div className="relative h-48">
+          <div className="relative h-32">
             {/* Base background */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl"></div>
 
             {/* Stacked circular shapes from top-right */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-indigo-400 opacity-20 translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-blue-300 opacity-30 translate-x-1/3 -translate-y-1/3"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-cyan-200 opacity-40 translate-x-1/4 -translate-y-1/4"></div>
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-indigo-400 opacity-20 translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute top-0 right-0 w-36 h-36 rounded-full bg-blue-300 opacity-30 translate-x-1/3 -translate-y-1/3"></div>
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-cyan-200 opacity-40 translate-x-1/4 -translate-y-1/4"></div>
 
             {/* Content overlay */}
-            <div className="relative z-10 h-full px-6 py-8 sm:p-10 flex flex-col justify-center">
+            <div className="relative z-10 h-full px-6 py-4 sm:p-6 flex flex-col justify-center">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                  <div className="flex items-center mb-2">
+                  <div className="flex items-center mb-1">
                     <Link
                       href="/masters/mastermain"
                       className="mr-3 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200"
                     >
                       <ArrowLeft className="h-5 w-5 text-white" />
                     </Link>
-                    <h1 className="text-3xl font-bold text-white drop-shadow-md">View Customers</h1>
+                    <h1 className="text-2xl font-bold text-white drop-shadow-md">View Customers</h1>
                   </div>
-                  <p className="mt-2 text-white/80 drop-shadow">Manage and organize your customers</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Desktop Search Field - Hidden on Mobile */}
@@ -485,113 +484,69 @@ export default function CustomersPage() {
                           : "bg-blue-50/80 border border-blue-200/50"
                       }`}
                     >
-                      <div className="relative p-4 flex flex-col z-10">
-                        {/* Customer Name & Group */}
-                        <div className="flex justify-between items-start mb-3">
+                      <div className="relative p-3 flex flex-col z-10">
+                        {/* Customer Name & Edit Button Row */}
+                        <div className="flex justify-between items-start mb-2">
                           <div className="flex-1 min-w-0">
                             <h3 className={`text-base font-bold truncate ${isDarkMode ? "text-white" : "text-gray-800"}`}>
                               {customer.name}
                             </h3>
-                            {customer.group_display && (
-                              <div className="flex items-center mt-1">
-                                <Users className={`h-3 w-3 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`} />
-                                <span className={`ml-1 text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-                                  {customer.group_display}
-                                </span>
-                              </div>
-                            )}
                           </div>
-
-                          {/* Tag */}
-                          {customer.tags_detail && (
-                            <div 
-                              className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ml-2"
-                              style={{ 
-                                backgroundColor: `${customer.tags_detail.color}20`,
-                                color: customer.tags_detail.color,
-                                border: `1px solid ${customer.tags_detail.color}40`
-                              }}
-                            >
-                              <TagIcon className="w-3 h-3" />
-                              <span className="truncate max-w-20">{customer.tags_detail.name}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Address */}
-                        {customer.address && (
-                          <p className={`text-xs mb-2 line-clamp-2 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-                            {customer.address}
-                          </p>
-                        )}
-
-                        {/* Phone */}
-                        <p className={`text-xs mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-                          📞 {customer.phone_number}
-                        </p>
-
-                        {/* Balance */}
-                        <div className="mb-3">
-                          <span className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
-                            Balance: 
-                          </span>
-                          <span className={`ml-1 text-sm font-semibold ${
-                            parseFloat(customer.opening_balance) >= 0 
-                              ? "text-green-600 dark:text-green-400" 
-                              : "text-red-600 dark:text-red-400"
-                          }`}>
-                            {formatBalance(customer.opening_balance)}
-                          </span>
-                        </div>
-
-                        {/* Quick Edit Controls */}
-                        <div className="mb-3 space-y-2">
-                          {/* Tag Quick Edit */}
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Tag:</span>
-                            <select
-                              value={customer.tags || ""}
-                              onChange={(e) => handleQuickTagChange(customer.id, e.target.value)}
-                              className={`text-xs px-2 py-1 rounded border ${
-                                isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
-                              }`}
-                            >
-                              <option value="">No Tag</option>
-                              {tags.map((tag) => (
-                                <option key={tag.id} value={tag.id}>
-                                  {tag.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Group Quick Edit */}
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Group:</span>
-                            <select
-                              value={customer.group || ""}
-                              onChange={(e) => handleQuickGroupChange(customer.id, e.target.value)}
-                              className={`text-xs px-2 py-1 rounded border ${
-                                isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
-                              }`}
-                            >
-                              <option value="">No Group</option>
-                              <option value="1">Group 1</option>
-                              <option value="2">Group 2</option>
-                              <option value="3">Group 3</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Action Button */}
-                        <div className="mt-auto">
                           <button
                             onClick={() => router.push(`/masters/customers/edit/${customer.id}`)}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-400 hover:to-indigo-400 transition-all duration-200 shadow-sm`}
+                            className={`ml-2 px-2 py-1 rounded-md text-xs font-medium bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-400 hover:to-indigo-400 transition-all duration-200 shadow-sm`}
                           >
-                            <Edit className="w-4 h-4" />
-                            Edit Details
+                            <Edit className="w-3 h-3 inline mr-1" />
+                            Edit
                           </button>
+                        </div>
+
+                        {/* Address, Phone, Balance in one compact line */}
+                        <div className={`text-xs mb-2 space-y-1 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                          {customer.address && (
+                            <div className="truncate">📍 {customer.address}</div>
+                          )}
+                          <div className="flex justify-between items-center">
+                            <span>📞 {customer.phone_number}</span>
+                            <span className={`font-semibold ${
+                              parseFloat(customer.opening_balance) >= 0 
+                                ? "text-green-600 dark:text-green-400" 
+                                : "text-red-600 dark:text-red-400"
+                            }`}>
+                              {formatBalance(customer.opening_balance)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Tag and Group Quick Edit in same line */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            value={customer.tags || ""}
+                            onChange={(e) => handleQuickTagChange(customer.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded border ${
+                              isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
+                            }`}
+                          >
+                            <option value="">No Tag</option>
+                            {tags.map((tag) => (
+                              <option key={tag.id} value={tag.id}>
+                                {tag.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={customer.group || ""}
+                            onChange={(e) => handleQuickGroupChange(customer.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded border ${
+                              isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"
+                            }`}
+                          >
+                            <option value="">No Group</option>
+                            <option value="1">Group 1</option>
+                            <option value="2">Group 2</option>
+                            <option value="3">Group 3</option>
+                          </select>
                         </div>
                       </div>
                     </motion.div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Save, Moon, Sun, Banknote, Building2, Loader2 } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type CashBankAccount = {
   id: number
@@ -28,8 +29,8 @@ export default function EditCashBankAccount() {
   const router = useRouter()
   const params = useParams()
   const accountId = params.id as string
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
 
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,6 +106,16 @@ export default function EditCashBankAccount() {
     }
   }
 
+  const handleOpeningBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // If the field is empty or just contains 0, set it to empty string
+    if (value === '' || value === '0') {
+      setEditAccount(prev => ({ ...prev, opening_balance: 0 }))
+    } else {
+      setEditAccount(prev => ({ ...prev, opening_balance: parseFloat(value) || 0 }))
+    }
+  }
+
   const handleCancel = () => {
     router.back()
   }
@@ -169,7 +180,7 @@ export default function EditCashBankAccount() {
             <h1 className="text-2xl font-bold">Edit Account</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -181,48 +192,6 @@ export default function EditCashBankAccount() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8`}>
-            <div className="mb-6">
-              <div className="flex items-center mb-4">
-                {editAccount.account_type === 'Cash' ? 
-                  <Banknote className="h-8 w-8 text-green-500 mr-3" /> : 
-                  <Building2 className="h-8 w-8 text-blue-500 mr-3" />
-                }
-                <div>
-                  <h2 className="text-xl font-semibold">Edit Account Details</h2>
-                  {originalAccount && (
-                    <p className="text-sm text-gray-500">
-                      Created on {new Date(originalAccount.created_at).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Update the account information below. Changes will affect future transactions.
-              </p>
-            </div>
-
-            {/* Current Balance Info */}
-            {originalAccount && (
-              <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-blue-900 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
-                <h3 className={`font-medium mb-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>
-                  Current Account Status
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Current Balance:</span>
-                    <p className={`${Number(originalAccount.current_balance) >= 0 ? 'text-green-600' : 'text-red-600'} font-semibold`}>
-                      ₹{Number(originalAccount.current_balance).toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Status:</span>
-                    <p className={originalAccount.is_active ? 'text-green-600' : 'text-red-600'}>
-                      {originalAccount.is_active ? 'Active' : 'Inactive'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleUpdateAccount} className="space-y-6">
               <div>
@@ -265,8 +234,8 @@ export default function EditCashBankAccount() {
                   <input
                     type="number"
                     step="0.01"
-                    value={editAccount.opening_balance}
-                    onChange={(e) => setEditAccount(prev => ({ ...prev, opening_balance: parseFloat(e.target.value) || 0 }))}
+                    value={editAccount.opening_balance === 0 ? '' : editAccount.opening_balance}
+                    onChange={handleOpeningBalanceChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
                     }`}
@@ -292,60 +261,16 @@ export default function EditCashBankAccount() {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Account Status
+                <label className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <input
+                    type="checkbox"
+                    checked={editAccount.is_active}
+                    onChange={(e) => setEditAccount(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  Active Account
                 </label>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      value="true"
-                      checked={editAccount.is_active === true}
-                      onChange={() => setEditAccount(prev => ({ ...prev, is_active: true }))}
-                      className="mr-2 text-blue-500 focus:ring-blue-500"
-                    />
-                    <span className="text-green-600 font-medium">Active</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      value="false"
-                      checked={editAccount.is_active === false}
-                      onChange={() => setEditAccount(prev => ({ ...prev, is_active: false }))}
-                      className="mr-2 text-blue-500 focus:ring-blue-500"
-                    />
-                    <span className="text-red-600 font-medium">Inactive</span>
-                  </label>
-                </div>
               </div>
-
-              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-blue-50 border border-blue-200'}`}>
-                <h3 className={`font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-blue-800'}`}>
-                  Updated Account Summary
-                </h3>
-                <div className="space-y-1 text-sm">
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Name:</span> {editAccount.name || 'Not specified'}
-                  </p>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Type:</span> {editAccount.account_type}
-                  </p>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Opening Balance:</span> ₹{Number(editAccount.opening_balance).toFixed(2)} ({editAccount.opening_balance_type})
-                  </p>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-blue-700'}>
-                    <span className="font-medium">Status:</span> {editAccount.is_active ? 'Active' : 'Inactive'}
-                  </p>
-                </div>
-              </div>
-
-              {hasChanges && (
-                <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-yellow-900 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'}`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
-                    ⚠️ You have unsaved changes. Click &quot;Update Account&quot; to save your changes.
-                  </p>
-                </div>
-              )}
 
               <div className="flex justify-end space-x-4 pt-4">
                 <button

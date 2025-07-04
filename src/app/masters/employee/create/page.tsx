@@ -4,9 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 export default function Page() {
   const router = useRouter()
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -18,7 +20,6 @@ export default function Page() {
   })
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -71,14 +72,16 @@ export default function Page() {
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/masters/employee/view" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
+            <Link href="/masters/mastermain" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
               <ArrowLeft className="h-6 w-6" />
             </Link>
             <h1 className="text-2xl font-bold">Create Employee</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full transition-colors ${
+              isDarkMode ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+            }`}
             aria-label="Toggle dark mode"
           >
             {isDarkMode ? '☀️' : '🌙'}
@@ -208,11 +211,6 @@ export default function Page() {
               />
               <span className="text-sm font-medium">Active Employee</span>
             </label>
-            <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {formData.is_active
-                ? 'Employee is currently active and available for assignment.'
-                : 'Employee is currently inactive and not available for assignment.'}
-            </p>
           </div>
           <button
             type="submit"

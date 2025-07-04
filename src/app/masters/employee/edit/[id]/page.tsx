@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Sun, Moon, ToggleLeft, ToggleRight } from 'lucide-react'
+import { ArrowLeft, Sun, Moon } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 export default function Page() {
   // Use next/navigation's useParams hook instead of receiving params as props
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : params.id
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
 
   const [employeeData, setEmployeeData] = useState({
     name: '',
@@ -23,17 +25,6 @@ export default function Page() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
-
-  // Toggle cells functionality
-  const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({})
-
-  const toggleCell = (cellKey: string) => {
-    setExpandedCells(prev => ({
-      ...prev,
-      [cellKey]: !prev[cellKey]
-    }))
-  }
 
   useEffect(() => {
     if (id) {
@@ -124,8 +115,10 @@ export default function Page() {
             <h1 className="text-2xl font-bold">Edit Employee</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+            onClick={toggleDarkMode}
+            className={`p-2 rounded-full transition-colors ${
+              isDarkMode ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+            }`}
             aria-label="Toggle dark mode"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -155,24 +148,15 @@ export default function Page() {
               </div>
             )}
 
-            <div className={`p-6 rounded-lg shadow-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`max-w-lg mx-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-lg p-8`}>
               <form onSubmit={handleSubmit}>
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="name" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Employee Name
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('name')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['name'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="name" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Employee Name
+                  </label>
                   <input 
                     type="text"
                     id="name"
@@ -180,45 +164,32 @@ export default function Page() {
                     value={employeeData.name}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['name'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="role" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Role
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('role')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['role'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="role" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Role
+                  </label>
                   <select 
                     id="role"
                     name="role"
                     value={employeeData.role}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['role'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   >
                     <option value="Driver">Driver</option>
                     <option value="Loadman">Loadman</option>
@@ -226,21 +197,12 @@ export default function Page() {
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="phone_number" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Phone Number
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('phone')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['phone'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="phone_number" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Phone Number
+                  </label>
                   <input 
                     type="tel"
                     id="phone_number"
@@ -248,36 +210,21 @@ export default function Page() {
                     value={employeeData.phone_number}
                     onChange={handleChange}
                     required
-                    pattern="[0-9]{10}"
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['phone'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   />
-                  <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    10-digit mobile number without country code
-                  </p>
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="date_of_joining" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Date of Joining
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('date')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['date'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="date_of_joining" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Date of Joining
+                  </label>
                   <input 
                     type="date"
                     id="date_of_joining"
@@ -285,32 +232,21 @@ export default function Page() {
                     value={employeeData.date_of_joining}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['date'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="daily_wage" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Daily Wage (₹)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('wage')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['wage'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="daily_wage" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Daily Wage (₹)
+                  </label>
                   <input 
                     type="number"
                     step="0.01"
@@ -319,32 +255,21 @@ export default function Page() {
                     value={employeeData.daily_wage}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['wage'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <label 
-                      htmlFor="daily_beta" 
-                      className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Daily Beta (₹)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => toggleCell('beta')}
-                      className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    >
-                      {expandedCells['beta'] ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                    </button>
-                  </div>
+                  <label 
+                    htmlFor="daily_beta" 
+                    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  >
+                    Daily Beta (₹)
+                  </label>
                   <input 
                     type="number"
                     step="0.01"
@@ -353,37 +278,31 @@ export default function Page() {
                     value={employeeData.daily_beta}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 rounded-md border ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      expandedCells['beta'] ? 'h-20' : 'h-10'
-                    } transition-all duration-200`}
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
                   />
                 </div>
 
-                <div className="mb-6 flex items-center">
-                  <input 
-                    type="checkbox"
-                    id="is_active"
-                    name="is_active"
-                    checked={employeeData.is_active}
-                    onChange={(e) => setEmployeeData({...employeeData, is_active: e.target.checked})}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label 
-                    htmlFor="is_active" 
-                    className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                  >
-                    Active
+                <div className="mb-6">
+                  <label className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={employeeData.is_active}
+                      onChange={(e) => setEmployeeData({...employeeData, is_active: e.target.checked})}
+                      className="mr-2 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium">Active Employee</span>
                   </label>
                 </div>
 
                 <div className="flex justify-end space-x-3">
                   <Link 
                     href="/masters/employee/view" 
-                    className={`px-4 py-2 rounded-md ${
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
                       isDarkMode 
                         ? 'bg-gray-700 text-white hover:bg-gray-600' 
                         : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
@@ -394,7 +313,13 @@ export default function Page() {
                   <button 
                     type="submit"
                     disabled={isSaving}
-                    className={`px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                      isSaving 
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                        : isDarkMode
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>

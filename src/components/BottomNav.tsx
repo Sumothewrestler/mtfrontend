@@ -12,7 +12,7 @@ export default function BottomNav() {
   const bottomNavItems = [
     { title: 'Home', href: '/', icon: Home },
     { title: 'Day Sheet', href: '/daysheet/daysheetmain', icon: Calendar },
-    { title: 'Reports', href: '/reports/reportsmain', icon: FileText },
+    { title: 'Reports', href: '/reports', icon: FileText },
     { title: 'Masters', href: '/masters/mastermain', icon: Database },
   ]
 

@@ -81,7 +81,7 @@ export default function DaySheet() {
           icon: PhoneCall,
           color: 'bg-purple-600',
           options: [
-            { title: 'Follow', icon: PhoneCall, href: '/daysheet/followup' },
+            { title: 'Follow', icon: PhoneCall, href: '/daysheet/tractors' },
             { title: 'Reports', icon: Eye, href: '/daysheet/followup/view' }
           ]
         },

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Moon, Sun, Plus, Edit, Trash2, Calendar, FileText, Database, Package } from 'lucide-react'
+import { Moon, Sun, Plus, Edit, Trash2, Calendar, FileText, Database, Package, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -168,21 +168,30 @@ export default function MaterialsPage() {
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center">
+              <Link href="/masters/mastermain" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
+                <ArrowLeft className="h-6 w-6" />
+              </Link>
               <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
-                Materials Management
+                Materials
               </h1>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Manage your materials inventory
-              </p>
             </div>
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={openCreateDialog}
+                className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add
+              </button>
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+                aria-label="Toggle dark mode"
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -204,27 +213,6 @@ export default function MaterialsPage() {
 
         {/* Materials List Card */}
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-semibold flex items-center">
-                  <Package className="mr-3" />
-                  Materials List
-                </h3>
-                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  View and manage all materials in your system
-                </p>
-              </div>
-              <button
-                onClick={openCreateDialog}
-                className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Material
-              </button>
-            </div>
-          </div>
-
           <div className="p-6">
             {loading ? (
               <div className="text-center py-8">
@@ -248,90 +236,34 @@ export default function MaterialsPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Material Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {materials.map((material, index) => (
-                      <tr key={material.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {index + 1}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium">{material.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {new Date(material.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => openEditDialog(material)}
-                              className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} text-blue-600 hover:text-blue-700`}
-                              title="Edit Material"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(material.id, material.name)}
-                              className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} text-red-600 hover:text-red-700`}
-                              title="Delete Material"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {materials.map((material) => (
+                  <div key={material.id} className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
+                    <div className="font-medium">{material.name}</div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => openEditDialog(material)}
+                        className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} text-blue-600 hover:text-blue-700`}
+                        title="Edit Material"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(material.id, material.name)}
+                        className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} text-red-600 hover:text-red-700`}
+                        title="Delete Material"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 mt-6`}>
-          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <Link
-              href="/materials/entry"
-              className={`p-4 rounded-lg border ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} text-center transition-colors`}
-            >
-              <Plus className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Material Entry</span>
-            </Link>
-            <Link
-              href="/materials/view"
-              className={`p-4 rounded-lg border ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} text-center transition-colors`}
-            >
-              <FileText className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">View Transactions</span>
-            </Link>
-            <Link
-              href="/materials/reports"
-              className={`p-4 rounded-lg border ${isDarkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} text-center transition-colors`}
-            >
-              <Database className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Reports</span>
-            </Link>
-          </div>
-        </div>
+
       </main>
 
       {/* Create Material Modal */}
