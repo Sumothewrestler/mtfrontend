@@ -72,7 +72,7 @@ export default function Page() {
 
   const handleDeleteEmployee = async (id: number) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employees/${id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employees/${id}/delete/`, {
         method: 'DELETE',
       })
       

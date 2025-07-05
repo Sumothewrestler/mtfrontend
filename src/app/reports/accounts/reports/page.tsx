@@ -297,7 +297,7 @@ export default function LedgerReportsPage() {
                       </div>
 
                       <Link 
-                        href={`/accounts/reports/ledger/${ledger.id}`}
+                        href={`/reports/accounts/reports/ledger/${ledger.id}`}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center text-sm"
                       >
                         <Eye size={16} className="mr-2" />

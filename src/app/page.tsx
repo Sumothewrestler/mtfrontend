@@ -62,7 +62,7 @@ export default function Dashboard() {
       gradient: 'from-orange-400 via-amber-500 to-yellow-500',
       buttons: [
         { title: 'Demand', href: '/daysheet/demand' },
-        { title: 'Daily Reports', href: '/reports/dailyreports' },
+        { title: 'Daily Reports', href: '/reports/daily_reports' },
       ]
     }
   ]
