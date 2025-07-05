@@ -306,6 +306,15 @@ export default function DailyReportsPage() {
               </div>
             </section>
 
+            {/* Follow Up Summary - Unique Customers */}
+            <section className={`p-3 rounded-lg shadow ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+            <h2 className="text-lg font-semibold mb-2">Follow Up Summary</h2>
+            <div className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+                <div className="text-xl font-bold">{report.follow_up_summary.unique_customers}</div>
+                <div className="text-sm">Customers Followed</div>
+            </div>
+            </section>
+
             {/* Sales Summary Section */}
             <section className={`p-3 rounded-lg shadow ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
               <h2 className="text-lg font-semibold mb-2">Sales Summary</h2>
@@ -324,6 +333,70 @@ export default function DailyReportsPage() {
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* Labour Accounts Section */}
+            <section className={`p-3 rounded-lg shadow ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+            <h2 className="text-lg font-semibold mb-4">Labour Accounts</h2>
+
+            <div className="overflow-auto">
+                <div className="grid grid-cols-4 font-semibold border-b pb-2 mb-2 text-sm">
+                <div>Employee</div>
+                <div>Wage</div>
+                <div>Beta</div>
+                <div>Others</div>
+                </div>
+
+                {report.labour_accounts.map((labour, index) => (
+                <div
+                    key={index}
+                    className={`grid grid-cols-4 text-sm py-2 border-b ${
+                    isDarkMode ? "border-gray-700" : "border-gray-200"
+                    }`}
+                >
+                    <div className="font-medium break-words whitespace-normal max-w-[180px]">
+                    {labour.employee_name}
+                    </div>
+                    <div>₹{Number(labour.daily_wage).toFixed(2)}</div>
+                    <div>₹{Number(labour.daily_beta).toFixed(2)}</div>
+                    <div>₹{Number(labour.incentive_amount).toFixed(2)}</div>
+                </div>
+                ))}
+
+                {/* Totals Row */}
+                <div className={`grid grid-cols-4 font-medium text-sm pt-3 mt-3 border-t ${isDarkMode ? "border-gray-600" : "border-gray-400"}`}>
+                <div>Total</div>
+                <div>
+                    ₹
+                    {report.labour_accounts
+                    .reduce((sum, item) => sum + Number(item.daily_wage), 0)
+                    .toFixed(2)}
+                </div>
+                <div>
+                    ₹
+                    {report.labour_accounts
+                    .reduce((sum, item) => sum + Number(item.daily_beta), 0)
+                    .toFixed(2)}
+                </div>
+                <div>
+                    ₹
+                    {report.labour_accounts
+                    .reduce((sum, item) => sum + Number(item.incentive_amount), 0)
+                    .toFixed(2)}
+                </div>
+                </div>
+
+                {/* Total Labour Expenses */}
+                <div className="mt-6 pt-3 border-t font-bold text-base text-right">
+                <span>Total Labour Expenses: </span>
+                <span>
+                    ₹
+                    {report.labour_accounts
+                    .reduce((sum, item) => sum + item.total_amount, 0)
+                    .toFixed(2)}
+                </span>
+                </div>
+            </div>
             </section>
 
             {/* Business Transactions Section */}
@@ -362,6 +435,25 @@ export default function DailyReportsPage() {
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* Bookings Section */}
+            <section className={`p-3 rounded-lg shadow ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+            <h2 className="text-lg font-semibold mb-2">Bookings</h2>
+            <div className="grid grid-cols-1 gap-2">
+                {report.bookings.map((booking, index) => (
+                <div
+                    key={index}
+                    className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}
+                >
+                    <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium">{booking.customer_name}</span>
+                    <span className="text-sm">{new Date(booking.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="text-sm opacity-75">{booking.description}</div>
+                </div>
+                ))}
+            </div>
             </section>
 
             {/* Tasks Section */}
