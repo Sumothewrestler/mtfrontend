@@ -302,7 +302,7 @@ export default function CustomerLedger() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Link
-              href="/reports/reportsmain"
+              href="/reports"
               className={`${isDarkMode ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-gray-900"} mr-4`}
             >
               <ArrowLeft className="h-6 w-6" />

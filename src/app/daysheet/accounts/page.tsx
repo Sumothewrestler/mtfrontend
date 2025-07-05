@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Moon, Sun, Plus, X, Building, FileText, DollarSign, Calendar, AlertCircle, CheckCircle, CreditCard } from 'lucide-react'
+import { Moon, Sun, Plus, X, Building, FileText, Calendar, AlertCircle, CheckCircle, CreditCard, ArrowLeft } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
+import Link from 'next/link'
 
 interface Business {
   id: number
@@ -277,9 +278,17 @@ export default function TransactionEntryPage() {
       {/* Header */}
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
-            Business Transactions
-          </h1>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/"
+              className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
+              Accounts
+            </h1>
+          </div>
           <button
             onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
@@ -307,10 +316,6 @@ export default function TransactionEntryPage() {
 
         {/* Transaction Form */}
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h2 className="text-xl font-semibold mb-6 flex items-center">
-            <DollarSign className="mr-2" />
-            New Transaction Entry
-          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
@@ -432,19 +437,38 @@ export default function TransactionEntryPage() {
               <label className="block text-sm font-medium mb-2">
                 Payment Status *
               </label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              >
-                <option value="Unpaid">Unpaid</option>
-                <option value="Partially Paid">Partially Paid</option>
-                <option value="Paid">Paid</option>
-              </select>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleInputChange('status', 'Unpaid')}
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
+                    formData.status === 'Unpaid'
+                      ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Unpaid
+                </button>
+                <button
+                  onClick={() => handleInputChange('status', 'Partially Paid')}
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
+                    formData.status === 'Partially Paid'
+                      ? 'bg-gradient-to-r from-orange-200 to-amber-200 text-orange-800 shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Partial
+                </button>
+                <button
+                  onClick={() => handleInputChange('status', 'Paid')}
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
+                    formData.status === 'Paid'
+                      ? 'bg-gradient-to-r from-emerald-200 to-green-200 text-emerald-800 shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Paid
+                </button>
+              </div>
             </div>
 
             {/* Paid Amount */}

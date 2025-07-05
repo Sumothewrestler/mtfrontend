@@ -73,7 +73,7 @@ export default function Dashboard() {
       gradient: 'from-blue-500 via-purple-500 to-purple-600',
       buttons: [
         { title: 'Add Job', href: '/daysheet/jobsubmit' },
-        { title: 'Receipt', href: '/daysheet/receiptentry' },
+        { title: 'Sales Receipt', href: '/daysheet/receiptentry' },
       ]
     },
     {
@@ -81,15 +81,15 @@ export default function Dashboard() {
       gradient: 'from-emerald-400 via-teal-500 to-green-600',
       buttons: [
         { title: 'Labour A/c', href: '/daysheet/employee' },
-        { title: 'Accounts', href: '/accounts/general' },
+        { title: 'Accounts', href: '/daysheet/accounts' },
       ]
     },
     {
       title: 'Financial Operations',
       gradient: 'from-orange-400 via-amber-500 to-yellow-500',
       buttons: [
-        { title: 'Payment', href: '/daysheet/paymententry' },
-        { title: 'Cash & Bank', href: '/accounts/cash-bank' },
+        { title: 'Receipt & Payment', href: '/daysheet/accounts/payments' },
+        { title: 'Cash & Bank', href: '/daysheet/accounts/cash-bank' },
       ]
     },
     {

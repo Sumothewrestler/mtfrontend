@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Moon, Sun, ArrowUpCircle, ArrowDownCircle, Building, FileText, DollarSign, Calendar, AlertCircle, CheckCircle, CreditCard, Receipt } from 'lucide-react'
+import { Moon, Sun, ArrowUpCircle, ArrowDownCircle, Building, FileText, DollarSign, Calendar, AlertCircle, CheckCircle, CreditCard, ArrowLeft } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
+import Link from 'next/link'
 
 interface Business {
   id: number
@@ -94,7 +95,12 @@ export default function ReceiptPaymentPage() {
       const response = await fetch(`${API_BASE_URL}cash-bank-accounts/`)
       if (response.ok) {
         const data = await response.json()
-        setCashBankAccounts(data)
+        // Ensure current_balance is a number
+        const processedData = data.map((account: CashBankAccount) => ({
+          ...account,
+          current_balance: Number(account.current_balance)
+        }))
+        setCashBankAccounts(processedData)
       }
     } catch (error) {
       console.error('Error fetching cash bank accounts:', error)
@@ -180,16 +186,22 @@ export default function ReceiptPaymentPage() {
     }
   }
 
-  const selectedLedger = filteredLedgers.find(l => l.id === formData.ledger)
-
   return (
     <div className={`flex flex-col min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       {/* Header */}
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
-            Receipt & Payment
-          </h1>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/"
+              className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
+              Receipt & Payment
+            </h1>
+          </div>
           <button
             onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
@@ -215,21 +227,8 @@ export default function ReceiptPaymentPage() {
           </div>
         )}
 
-        {/* Description */}
-        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-4 mb-6`}>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Use this form to record payments/receipts that settle past dues or advance money transfers. 
-            This is for cash/bank movements only, not for creating new expense/income entries.
-          </p>
-        </div>
-
         {/* Receipt/Payment Form */}
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h2 className="text-xl font-semibold mb-6 flex items-center">
-            <Receipt className="mr-2" />
-            New Receipt/Payment Entry
-          </h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Date */}
@@ -374,7 +373,7 @@ export default function ReceiptPaymentPage() {
                 <option value="">Select Account</option>
                 {cashBankAccounts.map((account) => (
                   <option key={account.id} value={account.id}>
-                    {account.name} ({account.account_type}) - ₹{account.current_balance.toFixed(2)}
+                    {account.name} ({account.account_type}) - ₹{typeof account.current_balance === 'number' ? account.current_balance.toFixed(2) : account.current_balance}
                   </option>
                 ))}
               </select>
@@ -388,7 +387,7 @@ export default function ReceiptPaymentPage() {
               <textarea
                 value={formData.note}
                 onChange={(e) => handleInputChange('note', e.target.value)}
-                placeholder="e.g., Part payment for Feb Rent, Advance for next month expenses, Settlement of outstanding dues..."
+                placeholder=""
                 rows={3}
                 className={`w-full p-3 border rounded-lg ${
                   isDarkMode 
@@ -398,24 +397,6 @@ export default function ReceiptPaymentPage() {
               />
             </div>
           </div>
-
-          {/* Selected Ledger Info */}
-          {selectedLedger && (
-            <div className={`mt-6 p-4 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-              <h4 className="font-medium mb-2">Selected Ledger:</h4>
-              <p className="text-sm">
-                <span className="font-medium">{selectedLedger.business_name}</span> - 
-                <span className="ml-1">{selectedLedger.name}</span>
-                <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                  selectedLedger.category === 'Expense' ? 'bg-red-100 text-red-800' :
-                  selectedLedger.category === 'Income' ? 'bg-green-100 text-green-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {selectedLedger.category_display}
-                </span>
-              </p>
-            </div>
-          )}
 
           {/* Submit Button */}
           <div className="mt-8">

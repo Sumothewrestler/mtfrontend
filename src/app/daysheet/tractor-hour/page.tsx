@@ -553,7 +553,7 @@ export default function TractorEntryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Start Hour Meter Reading
+                      Start Hour
                     </label>
                     <input
                       type="number"
@@ -571,7 +571,7 @@ export default function TractorEntryPage() {
 
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                      End Hour Meter Reading
+                      End Hour
                     </label>
                     <input
                       type="number"
