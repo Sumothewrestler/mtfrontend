@@ -27,7 +27,7 @@ interface CashBankAccount {
   id: number
   name: string
   account_type: string
-  current_balance: number
+  current_balance: number | string  // Update this line to handle both number and string
   is_active: boolean
 }
 
@@ -513,7 +513,9 @@ export default function TransactionEntryPage() {
                   <option value="">Select Account</option>
                   {cashBankAccounts.map((account) => (
                     <option key={account.id} value={account.id}>
-                      {account.name} ({account.account_type}) - ₹{account.current_balance.toFixed(2)}
+                      {account.name} ({account.account_type}) - ₹{typeof account.current_balance === 'number' 
+                      ? account.current_balance.toFixed(2)
+                      : parseFloat(account.current_balance).toFixed(2)}
                     </option>
                   ))}
                 </select>

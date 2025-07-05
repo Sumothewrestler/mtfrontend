@@ -2,20 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Edit2, Trash2, Moon, Sun, Filter, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Edit2, Trash2, Moon, Sun, Filter, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
-type DailyEntry = {
+type Payment = {
   id: number
   employee_id: number
   employee_name: string
-  employee_role: string
   date: string
-  daily_wage: number
-  daily_beta: number
-  incentive_amount: number
-  total_amount: number
-  attendance_status: string
+  amount: number
+  payment_method: string
+  account_name: string
+  description: string
   created_at: string
 }
 
@@ -23,18 +21,126 @@ type Employee = {
   id: number
   name: string
   role: string
+  current_balance: number
 }
 
-type EmployeeApiResponse = {
+type EditModalProps = {
+  payment: Payment | null
+  onClose: () => void
+  onSave: (payment: Partial<Payment>) => Promise<void>
+  accounts: CashBankAccount[]
+  isDarkMode: boolean
+}
+
+type CashBankAccount = {
   id: number
   name: string
-  role: string
-  is_active: boolean
+  account_type: string
+  current_balance: number
 }
 
-export default function ViewDailyAccounts() {
-  const [entries, setEntries] = useState<DailyEntry[]>([])
+function EditModal({ payment, onClose, onSave, accounts, isDarkMode }: EditModalProps) {
+  const [formData, setFormData] = useState<Partial<Payment>>({
+    ...payment,
+    amount: Number(payment?.amount) || 0
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await onSave(formData)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Edit Payment</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Amount
+              </label>
+              <input
+                type="number"
+                value={formData.amount || 0}
+                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) || 0 })}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Account
+              </label>
+              <select
+                value={formData.account_name}
+                onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+                required
+              >
+                <option value="">Select Account</option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.name}>
+                    {account.name} (₹{account.current_balance})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Description
+              </label>
+              <textarea
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-4 py-2 rounded-md ${
+                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function EmployeePayments() {
+  const [payments, setPayments] = useState<Payment[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [accounts, setAccounts] = useState<CashBankAccount[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
@@ -44,16 +150,19 @@ export default function ViewDailyAccounts() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  
+  // Edit Modal
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null)
 
-  const fetchEntries = useCallback(async () => {
+  const fetchPayments = useCallback(async () => {
     setIsLoading(true)
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}employee-daily-entries/history/`
+      let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}employee-payments/`
       const params = new URLSearchParams()
       
       if (selectedEmployee) params.append('employee_id', selectedEmployee)
-      if (dateFrom) params.append('date_from', dateFrom)
-      if (dateTo) params.append('date_to', dateTo)
+      if (dateFrom) params.append('from_date', dateFrom)
+      if (dateTo) params.append('to_date', dateTo)
       
       if (params.toString()) {
         url += `?${params.toString()}`
@@ -61,21 +170,13 @@ export default function ViewDailyAccounts() {
 
       const response = await fetch(url)
       if (!response.ok) {
-        throw new Error(`Failed to fetch entries: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch payments: ${response.status} ${response.statusText}`)
       }
       const data = await response.json()
-      // Transform the data to ensure numeric values
-      const transformedData = (Array.isArray(data) ? data : data.entries || []).map((entry: Partial<DailyEntry>) => ({
-        ...entry,
-        daily_wage: Number(entry.daily_wage),
-        daily_beta: Number(entry.daily_beta),
-        incentive_amount: Number(entry.incentive_amount),
-        total_amount: Number(entry.total_amount)
-      }))
-      setEntries(transformedData)
+      setPayments(data)
     } catch (error) {
-      console.error('Error fetching entries:', error)
-      setError(`Failed to load entries. Error: ${(error as Error).message}`)
+      console.error('Error fetching payments:', error)
+      setError(`Failed to load payments. Error: ${(error as Error).message}`)
     } finally {
       setIsLoading(false)
     }
@@ -83,44 +184,80 @@ export default function ViewDailyAccounts() {
 
   const fetchEmployees = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employees/list/`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employee-ledger/`)
       if (!response.ok) {
         throw new Error(`Failed to fetch employees: ${response.status} ${response.statusText}`)
       }
-      const data: EmployeeApiResponse[] = await response.json()
-      setEmployees(data.filter((emp: EmployeeApiResponse) => emp.is_active))
+      const data = await response.json()
+      setEmployees(data.employees || [])
     } catch (error) {
       console.error('Error fetching employees:', error)
     }
   }, [])
 
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}cash-bank-accounts/`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch accounts: ${response.status} ${response.statusText}`)
+      }
+      const data = await response.json()
+      setAccounts(data)
+    } catch (error) {
+      console.error('Error fetching accounts:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchEmployees()
-  }, [fetchEmployees])
+    fetchAccounts()
+  }, [fetchEmployees, fetchAccounts])
 
   useEffect(() => {
-    fetchEntries()
-  }, [fetchEntries])
+    fetchPayments()
+  }, [fetchPayments])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this entry?')) {
+    if (!confirm('Are you sure you want to delete this payment?')) {
       return
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employee-daily-entries/${id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employee-payments/${id}/`, {
         method: 'DELETE',
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete entry: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to delete payment: ${response.status} ${response.statusText}`)
       }
 
-      alert('Entry deleted successfully!')
-      fetchEntries()
+      alert('Payment deleted successfully!')
+      fetchPayments()
     } catch (error) {
-      console.error('Error deleting entry:', error)
-      alert(`Failed to delete entry. Error: ${(error as Error).message}`)
+      console.error('Error deleting payment:', error)
+      alert(`Failed to delete payment. Error: ${(error as Error).message}`)
+    }
+  }
+
+  const handleSavePayment = async (updatedPayment: Partial<Payment>) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}employee-payments/${editingPayment?.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedPayment),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to update payment: ${response.status} ${response.statusText}`)
+      }
+
+      alert('Payment updated successfully!')
+      fetchPayments()
+    } catch (error) {
+      console.error('Error updating payment:', error)
+      alert(`Failed to update payment. Error: ${(error as Error).message}`)
     }
   }
 
@@ -130,26 +267,15 @@ export default function ViewDailyAccounts() {
     setDateTo('')
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'present': return 'bg-green-100 text-green-800'
-      case 'absent': return 'bg-red-100 text-red-800'
-      case 'half-day': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const totalAmount = entries.reduce((sum, entry) => sum + entry.total_amount, 0)
-
   return (
     <div className={`min-h-screen pb-16 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/employees/daily-accounts" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
+            <Link href="/reports" className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}>
               <ArrowLeft className="h-6 w-6" />
             </Link>
-            <h1 className="text-2xl font-bold">Daily Accounts History</h1>
+            <h1 className="text-2xl font-bold">Employee Payments History</h1>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -185,14 +311,14 @@ export default function ViewDailyAccounts() {
                   <select
                     value={selectedEmployee}
                     onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    className={`w-full px-3 py-2 border rounded-md ${
+                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
                     }`}
                   >
                     <option value="">All Employees</option>
                     {employees.map(employee => (
                       <option key={employee.id} value={employee.id}>
-                        {employee.name} ({employee.role})
+                        {employee.name} (₹{employee.current_balance})
                       </option>
                     ))}
                   </select>
@@ -205,8 +331,8 @@ export default function ViewDailyAccounts() {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    className={`w-full px-3 py-2 border rounded-md ${
+                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
                     }`}
                   />
                 </div>
@@ -218,15 +344,15 @@ export default function ViewDailyAccounts() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    className={`w-full px-3 py-2 border rounded-md ${
+                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'
                     }`}
                   />
                 </div>
                 <div className="flex items-end">
                   <button
                     onClick={clearFilters}
-                    className={`w-full px-3 py-2 rounded-md transition-colors ${
+                    className={`w-full px-3 py-2 rounded-md ${
                       isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -252,18 +378,12 @@ export default function ViewDailyAccounts() {
         ) : (
           <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg overflow-hidden`}>
             <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Daily Entries ({entries.length})</h2>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Total Amount</p>
-                  <p className="text-xl font-bold text-green-600">₹{totalAmount.toFixed(2)}</p>
-                </div>
-              </div>
+              <h2 className="text-lg font-semibold">Payment History ({payments.length})</h2>
             </div>
 
-            {entries.length === 0 ? (
+            {payments.length === 0 ? (
               <div className={`p-8 text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                No entries found for the selected criteria.
+                No payments found for the selected criteria.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -277,19 +397,16 @@ export default function ViewDailyAccounts() {
                         Employee
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Amount
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Daily Wage
+                        Method
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Daily Beta
+                        Account
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Incentive
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
+                        Description
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -297,44 +414,36 @@ export default function ViewDailyAccounts() {
                     </tr>
                   </thead>
                   <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y divide-gray-200`}>
-                    {entries.map((entry) => (
-                      <tr key={entry.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                    {payments.map((payment) => (
+                      <tr key={payment.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {new Date(entry.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium">{entry.employee_name}</div>
-                            <div className="text-sm text-gray-500">{entry.employee_role}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(entry.attendance_status)}`}>
-                            {entry.attendance_status}
-                          </span>
+                          {new Date(payment.date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          ₹{entry.daily_wage.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          ₹{entry.daily_beta.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          ₹{entry.incentive_amount.toFixed(2)}
+                          {payment.employee_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                          ₹{entry.total_amount.toFixed(2)}
+                          ₹{(Number(payment.amount) || 0).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {payment.payment_method}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {payment.account_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {payment.description}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <Link
-                              href={`/employees/daily-accounts/edit/${entry.id}`}
+                            <button
+                              onClick={() => setEditingPayment(payment)}
                               className={`p-1 rounded ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
                             >
                               <Edit2 size={16} />
-                            </Link>
+                            </button>
                             <button
-                              onClick={() => handleDelete(entry.id)}
+                              onClick={() => handleDelete(payment.id)}
                               className={`p-1 rounded ${isDarkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'}`}
                             >
                               <Trash2 size={16} />
@@ -351,7 +460,15 @@ export default function ViewDailyAccounts() {
         )}
       </main>
 
-
+      {editingPayment && (
+        <EditModal
+          payment={editingPayment}
+          onClose={() => setEditingPayment(null)}
+          onSave={handleSavePayment}
+          accounts={accounts}
+          isDarkMode={isDarkMode}
+        />
+      )}
     </div>
   )
-} 
+}

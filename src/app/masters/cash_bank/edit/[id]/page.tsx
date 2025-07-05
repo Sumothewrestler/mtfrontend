@@ -40,7 +40,7 @@ export default function EditCashBankAccount() {
     account_type: 'Cash',
     opening_balance: 0,
     opening_balance_type: 'Debit',
-    is_active: true
+    is_active: false
   })
 
   const fetchAccount = useCallback(async () => {
@@ -65,7 +65,7 @@ export default function EditCashBankAccount() {
         account_type: data.account_type,
         opening_balance: Number(data.opening_balance),
         opening_balance_type: data.opening_balance_type,
-        is_active: data.is_active
+        is_active: Boolean(data.is_active)
       })
     } catch (error) {
       console.error('Error fetching account:', error)
@@ -108,11 +108,14 @@ export default function EditCashBankAccount() {
 
   const handleOpeningBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    // If the field is empty or just contains 0, set it to empty string
-    if (value === '' || value === '0') {
+    // Allow empty string or valid numbers
+    if (value === '') {
       setEditAccount(prev => ({ ...prev, opening_balance: 0 }))
     } else {
-      setEditAccount(prev => ({ ...prev, opening_balance: parseFloat(value) || 0 }))
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue)) {
+        setEditAccount(prev => ({ ...prev, opening_balance: numValue }))
+      }
     }
   }
 
@@ -234,7 +237,7 @@ export default function EditCashBankAccount() {
                   <input
                     type="number"
                     step="0.01"
-                    value={editAccount.opening_balance === 0 ? '' : editAccount.opening_balance}
+                    value={editAccount.opening_balance || ''}
                     onChange={handleOpeningBalanceChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
@@ -264,7 +267,7 @@ export default function EditCashBankAccount() {
                 <label className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <input
                     type="checkbox"
-                    checked={editAccount.is_active}
+                    checked={Boolean(editAccount.is_active)}
                     onChange={(e) => setEditAccount(prev => ({ ...prev, is_active: e.target.checked }))}
                     className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
