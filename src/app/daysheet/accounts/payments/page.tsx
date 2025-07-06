@@ -145,11 +145,10 @@ export default function ReceiptPaymentPage() {
     try {
       const payload = {
         date: formData.date,
-        transaction_type: formData.type,
+        transaction_type: formData.type === 'Receipt' ? 'Debit' : 'Credit',
         amount: parseFloat(formData.amount),
-        cash_bank_account: formData.payment_account,
-        note: formData.note,
-        // This could be enhanced to link with specific transactions
+        account: formData.payment_account,
+        description: formData.note,
         reference_info: {
           ledger: formData.ledger,
           business: formData.business || null

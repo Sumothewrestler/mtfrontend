@@ -9,6 +9,21 @@ import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 
 // Types for the API response
+interface BusinessTransactionDetail {
+  ledger__name: string
+  business__name: string | null
+  total_amount: number
+}
+
+interface BusinessTransactions {
+  income: number
+  expense: number
+  others: number
+  income_details: BusinessTransactionDetail[]
+  expense_details: BusinessTransactionDetail[]
+  others_details: BusinessTransactionDetail[]
+}
+
 interface DailyReport {
   date: string
   attendance: {
@@ -46,11 +61,7 @@ interface DailyReport {
     incentive_amount: number
     total_amount: number
   }[]
-  business_transactions: {
-    income: number
-    expense: number
-    others: number
-  }
+  business_transactions: BusinessTransactions
   cash_bank_summary: {
     account_name: string
     account_type: string
@@ -402,7 +413,9 @@ export default function DailyReportsPage() {
             {/* Business Transactions Section */}
             <section className={`p-3 rounded-lg shadow ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
               <h2 className="text-lg font-semibold mb-2">Business Transactions</h2>
-              <div className="grid grid-cols-3 gap-3">
+              
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
                   <div className="text-green-500 font-bold">₹ {report.business_transactions.income.toFixed(2)}</div>
                   <div className="text-sm">Income</div>
@@ -416,6 +429,75 @@ export default function DailyReportsPage() {
                   <div className="text-sm">Others</div>
                 </div>
               </div>
+
+              {/* Income Details */}
+              {report.business_transactions.income_details.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Income Details</h3>
+                  <div className="space-y-2">
+                    {report.business_transactions.income_details.map((item: BusinessTransactionDetail, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"} flex justify-between`}
+                      >
+                        <div>
+                          <span className="font-medium">{item.ledger__name}</span>
+                          {item.business__name && (
+                            <span className="text-sm opacity-75 ml-2">({item.business__name})</span>
+                          )}
+                        </div>
+                        <span>₹ {item.total_amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Expense Details */}
+              {report.business_transactions.expense_details.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Expense Details</h3>
+                  <div className="space-y-2">
+                    {report.business_transactions.expense_details.map((item: BusinessTransactionDetail, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"} flex justify-between`}
+                      >
+                        <div>
+                          <span className="font-medium">{item.ledger__name}</span>
+                          {item.business__name && (
+                            <span className="text-sm opacity-75 ml-2">({item.business__name})</span>
+                          )}
+                        </div>
+                        <span>₹ {item.total_amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Others Details */}
+              {report.business_transactions.others_details.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Others Details</h3>
+                  <div className="space-y-2">
+                    {report.business_transactions.others_details.map((item: BusinessTransactionDetail, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-50"} flex justify-between`}
+                      >
+                        <div>
+                          <span className="font-medium">{item.ledger__name}</span>
+                          {item.business__name && (
+                            <span className="text-sm opacity-75 ml-2">({item.business__name})</span>
+                          )}
+                        </div>
+                        <span>₹ {item.total_amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Cash Bank Summary Section */}

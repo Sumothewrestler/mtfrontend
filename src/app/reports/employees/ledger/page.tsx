@@ -13,6 +13,7 @@ type Employee = {
   current_balance: number
   phone_number: string
   date_of_joining: string
+  is_active: boolean
 }
 
 type LedgerEntry = {
@@ -37,6 +38,7 @@ type EmployeeLedgerData = {
 
 export default function EmployeeLedgerReport() {
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
   const [totalOutstanding, setTotalOutstanding] = useState<number>(0)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [ledgerData, setLedgerData] = useState<EmployeeLedgerData | null>(null)
@@ -46,6 +48,7 @@ export default function EmployeeLedgerReport() {
   const [isLedgerLoading, setIsLedgerLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
+  const [showInactive, setShowInactive] = useState(false)
 
   const fetchEmployeesSummary = useCallback(async () => {
     setIsLoading(true)
@@ -68,6 +71,13 @@ export default function EmployeeLedgerReport() {
   useEffect(() => {
     fetchEmployeesSummary()
   }, [fetchEmployeesSummary])
+
+  useEffect(() => {
+    const filtered = employees.filter(emp => showInactive || emp.is_active)
+    setFilteredEmployees(filtered)
+    const total = filtered.reduce((sum, emp) => sum + emp.current_balance, 0)
+    setTotalOutstanding(total)
+  }, [employees, showInactive])
 
   const fetchEmployeeLedger = useCallback(async (employeeId: number, from: string, to: string) => {
     if (!from || !to) {
@@ -156,13 +166,26 @@ export default function EmployeeLedgerReport() {
             </Link>
             <h1 className="text-2xl font-bold text-blue-600">Employee Ledger Reports</h1>
           </div>
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-            aria-label="Toggle dark mode"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowInactive(!showInactive)}
+              className={`p-2 rounded-lg flex items-center gap-2 ${
+                isDarkMode 
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              <Eye size={16} />
+              {showInactive ? 'Hide Inactive' : 'Show Inactive'}
+            </button>
+            <button
+              onClick={toggleDarkMode}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -189,9 +212,9 @@ export default function EmployeeLedgerReport() {
                   </div>
                 </div>
 
-                {employees.length === 0 ? (
+                {filteredEmployees.length === 0 ? (
                   <div className={`p-4 rounded-md ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-700'}`}>
-                    No active employees found.
+                    No {showInactive ? '' : 'active '}employees found.
                   </div>
                 ) : (
                   <>
@@ -206,7 +229,7 @@ export default function EmployeeLedgerReport() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {employees.map(employee => (
+                          {filteredEmployees.map(employee => (
                             <tr key={employee.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
                               <td className="px-4 py-3">
                                 <div>
@@ -242,7 +265,7 @@ export default function EmployeeLedgerReport() {
 
                     {/* Mobile View */}
                     <div className="md:hidden space-y-4">
-                      {employees.map(employee => (
+                      {filteredEmployees.map(employee => (
                         <div key={employee.id} className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4`}>
                           <div className="flex justify-between items-start mb-3">
                             <div>

@@ -24,12 +24,21 @@ interface TaskData {
   pending_tasks: Task[]
 }
 
+interface CashBankAccount {
+  id: number
+  name: string
+  account_type: string
+  current_balance: number
+  is_active: boolean
+}
+
 export default function Dashboard() {
   const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [taskData, setTaskData] = useState<TaskData | null>(null)
+  const [cashBankAccounts, setCashBankAccounts] = useState<CashBankAccount[]>([])
   const [currentTaskView, setCurrentTaskView] = useState<'today' | 'pending'>('today')
-  const [activeMainTab, setActiveMainTab] = useState<'today' | 'accounts'>('today')
+  const [activeMainTab, setActiveMainTab] = useState<'today' | 'cash-bank' | 'accounts'>('today')
   const [activeSalesTab, setActiveSalesTab] = useState<'today' | 'weekly'>('today')
   const [activeTab, setActiveTab] = useState<'general' | 'accounts'>('general')
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -132,9 +141,21 @@ export default function Dashboard() {
         console.error('Error fetching task data:', error);
       }
     };
+
+    const fetchCashBankAccounts = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}cash-bank-accounts/`);
+        if (!response.ok) throw new Error('Failed to fetch cash bank accounts');
+        const data = await response.json();
+        setCashBankAccounts(data);
+      } catch (error) {
+        console.error('Error fetching cash bank accounts:', error);
+      }
+    };
   
     fetchDashboardData();
     fetchTaskData();
+    fetchCashBankAccounts();
   }, []);
 
   const handleToggleTaskStatus = async (taskId: number) => {
@@ -267,10 +288,22 @@ export default function Dashboard() {
               Today
             </button>
             <button
+              onClick={() => setActiveMainTab('cash-bank')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeMainTab === 'cash-bank'
+                  ? 'bg-green-600 text-white'
+                  : isDarkMode
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Cash Bank
+            </button>
+            <button
               onClick={() => setActiveMainTab('accounts')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeMainTab === 'accounts'
-                  ? 'bg-green-600 text-white'
+                  ? 'bg-purple-600 text-white'
                   : isDarkMode
                   ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -283,79 +316,128 @@ export default function Dashboard() {
 
         {/* Today Tab Content */}
         {activeMainTab === 'today' && (
-          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-4 mb-6`}>
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setCurrentTaskView('today')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    currentTaskView === 'today'
-                      ? 'bg-blue-600 text-white'
-                      : isDarkMode
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Today ({taskData?.today_tasks.filter(task => task.status !== 'Done').length || 0})
-                </button>
-                <button
-                  onClick={() => setCurrentTaskView('pending')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    currentTaskView === 'pending'
-                      ? 'bg-orange-600 text-white'
-                      : isDarkMode
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Pending ({taskData?.pending_tasks.filter(task => task.due_date !== new Date().toISOString().split('T')[0]).length || 0})
-                </button>
-              </div>
-              <button
-                onClick={() => setShowTaskModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
-              >
-                <Plus size={16} className="mr-1" />
-                New
-              </button>
-            </div>
-
-            {/* Scrollable Task List */}
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {getDisplayTasks().length ? (
-                getDisplayTasks().map((task) => (
-                  <div
-                    key={task.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+          <>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-4 mb-6`}>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCurrentTaskView('today')}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      currentTaskView === 'today'
+                        ? 'bg-blue-600 text-white'
+                        : isDarkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => handleToggleTaskStatus(task.id)}
-                        className={`${getTaskStatusColor(task.status, task.due_date)} hover:scale-110 transition-transform`}
-                      >
-                        <Circle size={20} />
-                      </button>
-                      <div>
-                        <h4 className="font-medium text-sm">{task.task_name}</h4>
+                    Today ({taskData?.today_tasks.filter(task => task.status !== 'Done').length || 0})
+                  </button>
+                  <button
+                    onClick={() => setCurrentTaskView('pending')}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      currentTaskView === 'pending'
+                        ? 'bg-orange-600 text-white'
+                        : isDarkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Pending ({taskData?.pending_tasks.filter(task => task.due_date !== new Date().toISOString().split('T')[0]).length || 0})
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowTaskModal(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
+                >
+                  <Plus size={16} className="mr-1" />
+                  New
+                </button>
+              </div>
+
+              {/* Scrollable Task List */}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {getDisplayTasks().length ? (
+                  getDisplayTasks().map((task) => (
+                    <div
+                      key={task.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
                         <button
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowDateModal(true);
-                          }}
-                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                          onClick={() => handleToggleTaskStatus(task.id)}
+                          className={`${getTaskStatusColor(task.status, task.due_date)} hover:scale-110 transition-transform`}
                         >
-                          {new Date(task.due_date).toLocaleDateString()}
+                          <Circle size={20} />
                         </button>
+                        <div>
+                          <h4 className="font-medium text-sm">{task.task_name}</h4>
+                          <button
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setShowDateModal(true);
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                          >
+                            {new Date(task.due_date).toLocaleDateString()}
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <Clock size={32} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">{currentTaskView === 'today' ? 'No tasks for today' : 'No pending tasks'}</p>
                   </div>
-                ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Cash Bank Tab Content */}
+        {activeMainTab === 'cash-bank' && (
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-4 mb-6`}>
+            <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+              {cashBankAccounts.length ? (
+                cashBankAccounts
+                  .filter(account => account.account_type === 'Cash' || account.account_type === 'Bank')
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((account) => (
+                    <div
+                      key={account.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div>
+                        <h4 className="font-medium text-sm">{account.name}</h4>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {account.account_type}
+                        </p>
+                      </div>
+                      <div className={`text-right ${
+                        account.current_balance >= 0 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        <p className="font-semibold">
+                          ₹ {Math.abs(account.current_balance).toFixed(2)}
+                        </p>
+                        <p className="text-xs opacity-75">
+                          {account.current_balance >= 0 ? 'CR' : 'DR'}
+                        </p>
+                      </div>
+                    </div>
+                  ))
               ) : (
                 <div className="text-center py-6 text-gray-500">
-                  <Clock size={32} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{currentTaskView === 'today' ? 'No tasks for today' : 'No pending tasks'}</p>
+                  <DollarSign size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No accounts available</p>
                 </div>
               )}
             </div>
