@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Save, Eye, Moon, Sun, DollarSign } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Moon, Sun, X } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 import Loading from '@/components/Loading'
 
@@ -34,6 +34,99 @@ type Payment = {
   description: string
 }
 
+type PaymentModalProps = {
+  isOpen: boolean
+  onClose: () => void
+  employeeId: number
+  accounts: CashBankAccount[]
+  payment: Payment
+  onPaymentChange: (employeeId: number, field: string, value: string | number) => void
+}
+
+const PaymentModal = ({ isOpen, onClose, employeeId, accounts, payment, onPaymentChange }: PaymentModalProps) => {
+  const { isDarkMode } = useDarkMode()
+  
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 relative`}>
+        <button
+          onClick={onClose}
+          className={`absolute top-4 right-4 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'}`}
+        >
+          <X size={20} />
+        </button>
+        
+        <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+          Make Payment
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Amount
+            </label>
+            <input
+              type="number"
+              value={payment?.amount || ''}
+              onChange={(e) => onPaymentChange(employeeId, 'amount', parseInt(e.target.value) || 0)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+              }`}
+              placeholder="Enter amount"
+            />
+          </div>
+          
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Account
+            </label>
+            <select
+              value={payment?.account_id || ''}
+              onChange={(e) => onPaymentChange(employeeId, 'account_id', parseInt(e.target.value))}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">Select Account</option>
+              {accounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.name} (₹{Math.round(account.current_balance)})
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={payment?.description || ''}
+              onChange={(e) => onPaymentChange(employeeId, 'description', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+              }`}
+              placeholder="Payment description"
+            />
+          </div>
+          
+          <button
+            onClick={onClose}
+            className={`w-full py-2 px-4 rounded-md ${
+              isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+            } text-white font-medium`}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function EmployeeDailyAccounts() {
   const today = new Date().toISOString().split('T')[0]
   const [date, setDate] = useState(today)
@@ -43,7 +136,7 @@ export default function EmployeeDailyAccounts() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
-  const [showPaymentFor, setShowPaymentFor] = useState<number | null>(null)
+  const [modalEmployeeId, setModalEmployeeId] = useState<number | null>(null)
 
   const fetchDailyEntries = useCallback(async (selectedDate: string) => {
     setIsLoading(true)
@@ -111,7 +204,7 @@ export default function EmployeeDailyAccounts() {
   }
 
   const togglePaymentInput = (employeeId: number) => {
-    setShowPaymentFor(prev => prev === employeeId ? null : employeeId)
+    setModalEmployeeId(prev => prev === employeeId ? null : employeeId)
     if (!payments[employeeId]) {
       setPayments(prev => ({
         ...prev,
@@ -162,19 +255,10 @@ export default function EmployeeDailyAccounts() {
       // Refresh the data
       fetchDailyEntries(date)
       setPayments({})
-      setShowPaymentFor(null)
+      setModalEmployeeId(null)
     } catch (error) {
       console.error('Error submitting entries:', error)
       alert(`Failed to submit entries. Error: ${(error as Error).message}`)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'present': return 'bg-green-100 text-green-800'
-      case 'absent': return 'bg-red-100 text-red-800'
-      case 'half-day': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -249,162 +333,78 @@ export default function EmployeeDailyAccounts() {
                       key={entry.employee_id} 
                       className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-md transition-all duration-300`}
                     >
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4">
-                        <div className="mb-4 lg:mb-0 lg:w-1/4">
-                          <div className="font-medium flex items-center">
-                            <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                              {entry.employee_name}
-                            </span>
-                            <span className="ml-2 text-sm text-red-600 font-medium">
-                              ₹{entry.current_balance.toFixed(0)}
-                            </span>
-                          </div>
-                          <div className="flex items-center mt-2">
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(entry.attendance_status)}`}>
-                              {entry.attendance_status}
-                            </span>
-                          </div>
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">
+                          <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {entry.employee_name}
+                          </span>
                         </div>
-
-                        <div className="lg:w-2/3">
-                          <div className="mb-3">
-                            {/* Title row */}
-                            <div className="flex gap-3 mb-2">
-                              <div className="w-16 text-center">
-                                <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  Wage
-                                </span>
-                              </div>
-                              <div className="w-16 text-center">
-                                <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  Beta
-                                </span>
-                              </div>
-                              <div className="w-16 text-center">
-                                <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  Load
-                                </span>
-                              </div>
-                            </div>
-                            {/* Input row with subtle containers */}
-                            <div className="flex gap-3">
-                              <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
-                                <input
-                                  type="number"
-                                  step="1"
-                                  value={Math.round(entry.daily_wage)}
-                                  onChange={(e) => handleEntryChange(entry.employee_id, 'daily_wage', parseInt(e.target.value) || 0)}
-                                  className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
-                                    isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
-                                  }`}
-                                />
-                              </div>
-                              <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
-                                <input
-                                  type="number"
-                                  step="1"
-                                  value={Math.round(entry.daily_beta)}
-                                  onChange={(e) => handleEntryChange(entry.employee_id, 'daily_beta', parseInt(e.target.value) || 0)}
-                                  className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
-                                    isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
-                                  }`}
-                                />
-                              </div>
-                              <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
-                                <input
-                                  type="number"
-                                  step="1"
-                                  value={Math.round(entry.incentive_amount)}
-                                  onChange={(e) => handleEntryChange(entry.employee_id, 'incentive_amount', parseInt(e.target.value) || 0)}
-                                  className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
-                                    isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
-                                  }`}
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <span className={`text-sm font-medium mr-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Total: ₹{Math.round(entry.total_amount)}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => togglePaymentInput(entry.employee_id)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center ${
-                                  showPaymentFor === entry.employee_id
-                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg transform scale-105'
-                                    : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transform hover:scale-105'
-                                }`}
-                              >
-                                <DollarSign size={16} className="mr-2" />
-                                {showPaymentFor === entry.employee_id ? 'Hide Payment' : 'Make Payment'}
-                              </button>
-                            </div>
-                            
-                            {payments[entry.employee_id]?.amount > 0 && (
-                              <span className="text-sm text-green-600 font-medium">
-                                Payment: ₹{Math.round(payments[entry.employee_id].amount)} via {payments[entry.employee_id].payment_method}
-                              </span>
-                            )}
-                          </div>
-
-                          {showPaymentFor === entry.employee_id && (
-                            <div className={`mt-3 p-3 border rounded-md ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
-                              <div className="flex items-center gap-4 mb-3">
-                                <div className="flex items-center gap-2">
-                                  <label className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    Amount:
-                                  </label>
-                                  <input
-                                    type="number"
-                                    step="1"
-                                    value={Math.round(payments[entry.employee_id]?.amount || 0)}
-                                    onChange={(e) => handlePaymentChange(entry.employee_id, 'amount', parseInt(e.target.value) || 0)}
-                                    className={`w-20 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                      isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                                    }`}
-                                  />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <label className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    Account:
-                                  </label>
-                                  <select
-                                    value={payments[entry.employee_id]?.account_id || ''}
-                                    onChange={(e) => handlePaymentChange(entry.employee_id, 'account_id', parseInt(e.target.value))}
-                                    className={`px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                      isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                                    }`}
-                                  >
-                                    <option value="">Select Account</option>
-                                    {accounts.map(account => (
-                                      <option key={account.id} value={account.id}>
-                                        {account.name} (₹{Math.round(account.current_balance)})
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
-                              <div>
-                                <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  Description
-                                </label>
-                                <input
-                                  type="text"
-                                  value={payments[entry.employee_id]?.description || ''}
-                                  onChange={(e) => handlePaymentChange(entry.employee_id, 'description', e.target.value)}
-                                  placeholder="Payment description"
-                                  className={`w-full px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                    isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
-                                  }`}
-                                />
-                              </div>
-                            </div>
-                          )}
+                        
+                        <div className="flex items-center space-x-4">
+                          <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Total: ₹{Math.round(entry.total_amount)}
+                          </span>
+                          
+                          <button
+                            type="button"
+                            onClick={() => togglePaymentInput(entry.employee_id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                              isDarkMode 
+                                ? 'bg-green-600 hover:bg-green-700' 
+                                : 'bg-green-500 hover:bg-green-600'
+                            } text-white`}
+                          >
+                            Payment
+                          </button>
                         </div>
                       </div>
+
+                      <div className="mt-4">
+                        <div className="flex gap-3">
+                          <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
+                            <input
+                              type="number"
+                              step="1"
+                              value={entry.daily_wage || ''}
+                              onChange={(e) => handleEntryChange(entry.employee_id, 'daily_wage', parseInt(e.target.value) || 0)}
+                              className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
+                                isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
+                              }`}
+                              placeholder="Wage"
+                            />
+                          </div>
+                          <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
+                            <input
+                              type="number"
+                              step="1"
+                              value={entry.daily_beta || ''}
+                              onChange={(e) => handleEntryChange(entry.employee_id, 'daily_beta', parseInt(e.target.value) || 0)}
+                              className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
+                                isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
+                              }`}
+                              placeholder="Beta"
+                            />
+                          </div>
+                          <div className={`p-1 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-gray-50 border-gray-200'}`}>
+                            <input
+                              type="number"
+                              step="1"
+                              value={entry.incentive_amount || ''}
+                              onChange={(e) => handleEntryChange(entry.employee_id, 'incentive_amount', parseInt(e.target.value) || 0)}
+                              className={`w-16 px-2 py-1 border-0 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center ${
+                                isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
+                              }`}
+                              placeholder="Load"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {payments[entry.employee_id]?.amount > 0 && (
+                        <div className="mt-2 text-sm text-green-600 font-medium">
+                          Payment: ₹{Math.round(payments[entry.employee_id].amount)} via {payments[entry.employee_id].payment_method}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -428,6 +428,15 @@ export default function EmployeeDailyAccounts() {
           </form>
         )}
       </main>
+
+      <PaymentModal
+        isOpen={modalEmployeeId !== null}
+        onClose={() => setModalEmployeeId(null)}
+        employeeId={modalEmployeeId || 0}
+        accounts={accounts}
+        payment={payments[modalEmployeeId || 0] || {}}
+        onPaymentChange={handlePaymentChange}
+      />
     </div>
   )
 }

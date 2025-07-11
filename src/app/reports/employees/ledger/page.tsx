@@ -166,17 +166,18 @@ export default function EmployeeLedgerReport() {
             </Link>
             <h1 className="text-2xl font-bold text-blue-600">Employee Ledger Reports</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowInactive(!showInactive)}
-              className={`p-2 rounded-lg flex items-center gap-2 ${
+              className={`p-2 rounded-lg ${
                 isDarkMode 
                   ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
+              title={showInactive ? 'Hide Inactive' : 'Show Inactive'}
             >
-              <Eye size={16} />
-              {showInactive ? 'Hide Inactive' : 'Show Inactive'}
+              <Eye size={20} className={showInactive ? 'text-blue-500' : ''} />
+              <span className="hidden md:inline ml-2">{showInactive ? 'Hide Inactive' : 'Show Inactive'}</span>
             </button>
             <button
               onClick={toggleDarkMode}
@@ -225,25 +226,14 @@ export default function EmployeeLedgerReport() {
                           <tr>
                             <th className="px-4 py-3 text-left font-medium">Employee</th>
                             <th className="px-4 py-3 text-right font-medium">Current Balance</th>
-                            <th className="px-4 py-3 text-center font-medium">Action</th>
+                            <th className="px-4 py-3 text-center font-medium w-24">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {filteredEmployees.map(employee => (
                             <tr key={employee.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
                               <td className="px-4 py-3">
-                                <div>
-                                  <div className="font-medium">{employee.name}</div>
-                                  <div className="flex items-center space-x-2 mt-1">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${
-                                      employee.role === 'Driver' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                                    }`}>
-                                      {employee.role}
-                                    </span>
-                                    <span className="text-xs text-gray-500">{employee.phone_number}</span>
-                                    <span className="text-xs text-gray-500">{formatDate(employee.date_of_joining)}</span>
-                                  </div>
-                                </div>
+                                <div className="font-medium">{employee.name}</div>
                               </td>
                               <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(employee.current_balance)}`}>
                                 {formatCurrency(employee.current_balance)}
@@ -251,10 +241,9 @@ export default function EmployeeLedgerReport() {
                               <td className="px-4 py-3 text-center">
                                 <button
                                   onClick={() => handleViewLedger(employee)}
-                                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                  className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                 >
-                                  <Eye size={16} className="mr-1" />
-                                  View Ledger
+                                  View
                                 </button>
                               </td>
                             </tr>
@@ -264,32 +253,23 @@ export default function EmployeeLedgerReport() {
                     </div>
 
                     {/* Mobile View */}
-                    <div className="md:hidden space-y-4">
+                    <div className="md:hidden space-y-2">
                       {filteredEmployees.map(employee => (
-                        <div key={employee.id} className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4`}>
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="font-medium text-base">{employee.name}</h3>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  employee.role === 'Driver' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                                }`}>
-                                  {employee.role}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-medium ${getBalanceColor(employee.current_balance)}`}>
-                                {formatCurrency(employee.current_balance)}
-                              </div>
-                            </div>
+                        <div 
+                          key={employee.id} 
+                          className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-3 flex items-center justify-between`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="font-medium">{employee.name}</span>
+                            <span className={`font-medium ${getBalanceColor(employee.current_balance)}`}>
+                              {formatCurrency(employee.current_balance)}
+                            </span>
                           </div>
                           <button
                             onClick={() => handleViewLedger(employee)}
-                            className="w-full inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                           >
-                            <Eye size={16} className="mr-1" />
-                            View Ledger
+                            View
                           </button>
                         </div>
                       ))}
@@ -303,17 +283,11 @@ export default function EmployeeLedgerReport() {
             {selectedEmployee && (
               <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6`}>
                 <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl font-semibold flex items-center">
-                      <User className="mr-2" size={24} />
-                      {selectedEmployee.name} - Ledger Report
-                    </h2>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                      {selectedEmployee.role} | Current Balance: {' '}
-                      <span className={`font-medium ${getBalanceColor(selectedEmployee.current_balance)}`}>
-                        {formatCurrency(selectedEmployee.current_balance)}
-                      </span>
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-semibold">{selectedEmployee.name}</h2>
+                    <span className={`font-medium ${getBalanceColor(selectedEmployee.current_balance)}`}>
+                      {formatCurrency(selectedEmployee.current_balance)}
+                    </span>
                   </div>
                   <button
                     onClick={() => {setSelectedEmployee(null); setLedgerData(null)}}
@@ -321,7 +295,7 @@ export default function EmployeeLedgerReport() {
                       isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     } transition-colors`}
                   >
-                    ← Back to Summary
+                    ← Back
                   </button>
                 </div>
 
@@ -377,22 +351,18 @@ export default function EmployeeLedgerReport() {
               <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg p-6`}>
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-4">Ledger Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <p className="text-sm font-medium mb-1">Opening Balance</p>
-                      <p className={`text-xl font-bold ${getBalanceColor(ledgerData.opening_balance || 0)}`}>
+                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} flex justify-between items-center`}>
+                    <div>
+                      <p className="text-sm font-medium">Opening Balance</p>
+                      <p className={`text-lg font-bold ${getBalanceColor(ledgerData.opening_balance || 0)}`}>
                         {formatCurrency(ledgerData.opening_balance || 0)}
                       </p>
                     </div>
-                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <p className="text-sm font-medium mb-1">Closing Balance</p>
-                      <p className={`text-xl font-bold ${getBalanceColor(ledgerData.closing_balance || 0)}`}>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">Closing Balance</p>
+                      <p className={`text-lg font-bold ${getBalanceColor(ledgerData.closing_balance || 0)}`}>
                         {formatCurrency(ledgerData.closing_balance || 0)}
                       </p>
-                    </div>
-                    <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                      <p className="text-sm font-medium mb-1">Total Transactions</p>
-                      <p className="text-xl font-bold">{ledgerData.ledger_entries.length}</p>
                     </div>
                   </div>
                 </div>
@@ -402,54 +372,88 @@ export default function EmployeeLedgerReport() {
                     No transactions found for the selected date range.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                      <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                        <tr>
-                          <th className="px-4 py-3 text-left font-medium">Date</th>
-                          <th className="px-4 py-3 text-left font-medium">Description</th>
-                          <th className="px-4 py-3 text-left font-medium">Type</th>
-                          <th className="px-4 py-3 text-right font-medium">Debit</th>
-                          <th className="px-4 py-3 text-right font-medium">Credit</th>
-                          <th className="px-4 py-3 text-right font-medium">Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {ledgerData.ledger_entries.map(entry => (
-                          <tr key={entry.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
-                            <td className="px-4 py-3">{formatDate(entry.date)}</td>
-                            <td className="px-4 py-3 max-w-md">
-                              <div className="truncate" title={entry.description}>
-                                {entry.description}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
-                                {entry.transaction_type.replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              {entry.debit > 0 && (
-                                <span className="text-red-600 font-medium">
-                                  {formatCurrency(entry.debit)}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              {entry.credit > 0 && (
-                                <span className="text-green-600 font-medium">
-                                  {formatCurrency(entry.credit)}
-                                </span>
-                              )}
-                            </td>
-                            <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(entry.balance)}`}>
-                              {formatCurrency(entry.balance)}
-                            </td>
+                  <>
+                    {/* Desktop View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium">Date</th>
+                            <th className="px-4 py-3 text-left font-medium">Description</th>
+                            <th className="px-4 py-3 text-left font-medium">Type</th>
+                            <th className="px-4 py-3 text-right font-medium">Debit</th>
+                            <th className="px-4 py-3 text-right font-medium">Credit</th>
+                            <th className="px-4 py-3 text-right font-medium">Balance</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {ledgerData.ledger_entries.map(entry => (
+                            <tr key={entry.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
+                              <td className="px-4 py-3">{formatDate(entry.date)}</td>
+                              <td className="px-4 py-3 max-w-md">
+                                <div className="truncate" title={entry.description}>
+                                  {entry.description}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
+                                  {entry.transaction_type.replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {entry.debit > 0 && (
+                                  <span className="text-red-600 font-medium">
+                                    {formatCurrency(entry.debit)}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {entry.credit > 0 && (
+                                  <span className="text-green-600 font-medium">
+                                    {formatCurrency(entry.credit)}
+                                  </span>
+                                )}
+                              </td>
+                              <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(entry.balance)}`}>
+                                {formatCurrency(entry.balance)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile View - Card Layout */}
+                    <div className="md:hidden space-y-2">
+                      {ledgerData.ledger_entries.map(entry => (
+                        <div 
+                          key={entry.id} 
+                          className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-3`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-sm">{formatDate(entry.date)}</span>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
+                              {entry.transaction_type.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <p className="text-sm mb-2 line-clamp-2">{entry.description}</p>
+                          <div className="flex justify-between items-center text-sm">
+                            <div>
+                              {entry.debit > 0 && (
+                                <span className="text-red-600 font-medium">Dr: {formatCurrency(entry.debit)}</span>
+                              )}
+                              {entry.credit > 0 && (
+                                <span className="text-green-600 font-medium">Cr: {formatCurrency(entry.credit)}</span>
+                              )}
+                            </div>
+                            <span className={`font-medium ${getBalanceColor(entry.balance)}`}>
+                              {formatCurrency(entry.balance)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             )}

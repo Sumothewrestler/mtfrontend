@@ -13,6 +13,8 @@ type Job = {
   load_rate: number
   load_amount: number
   description: string
+  outstanding_balance: number
+  outstanding_as_of: string
 }
 
 export default function JobReport() {
@@ -123,11 +125,21 @@ export default function JobReport() {
     ctx.fillText('Total Amount:', col2 + 10, tableTop + rowHeight * 2 + 25)
     ctx.fillText(`₹${job.load_amount}`, col3 - 70, tableTop + rowHeight * 2 + 25)
 
+    // Add outstanding balance section after the total amount
+    ctx.font = 'bold 18px Arial'
+    ctx.fillStyle = '#0284c7'
+    const outstandingY = tableTop + rowHeight * 3 + 25
+    ctx.fillText('Total Outstanding:', col2 + 10, outstandingY)
+    ctx.fillText(`₹${job.outstanding_balance}`, col3 - 70, outstandingY)
+    ctx.font = '14px Arial'
+    ctx.fillStyle = '#64748b'
+    ctx.fillText(`(as of ${job.outstanding_as_of})`, col2 + 10, outstandingY + 20)
+
     // Draw description
     ctx.font = '16px Arial'
     ctx.fillStyle = '#0369a1'
-    ctx.fillText('Description:', 50, tableTop + rowHeight * 3 + 25)
-    ctx.fillText(job.description, 50, tableTop + rowHeight * 3 + 55)
+    ctx.fillText('Description:', 50, outstandingY + 50)
+    ctx.fillText(job.description, 50, outstandingY + 80)
 
     // Add decorative elements
     ctx.strokeStyle = '#0284c7'

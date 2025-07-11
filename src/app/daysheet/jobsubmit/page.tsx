@@ -20,9 +20,8 @@ interface Job {
   date: string
   customer: number
   tractor: number
-  opening_hours: number
-  closing_hours: number
   site_area: string
+  to_area: string
   total_load: number
   load_rate: number
   load_amount: number
@@ -49,9 +48,8 @@ export default function JobSubmitPage() {
         date: new Date().toISOString().split('T')[0],
         customer: 0,
         tractor: 0,
-        opening_hours: 0,
-        closing_hours: 0,
         site_area: '',
+        to_area: '',
         total_load: 0,
         load_rate: 0,
         load_amount: 0,
@@ -276,36 +274,25 @@ export default function JobSubmitPage() {
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label htmlFor={`jobs.${index}.opening_hours`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Opening Hours</label>
+                  <label htmlFor={`jobs.${index}.site_area`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Site Area</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    {...register(`jobs.${index}.opening_hours` as const, { required: "Opening hours are required", min: 0 })}
+                    type="text"
+                    {...register(`jobs.${index}.site_area` as const, { required: "Site area is required" })}
                     className={inputStyle}
                   />
-                  {errors.jobs?.[index]?.opening_hours && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].opening_hours.message}</p>}
+                  {errors.jobs?.[index]?.site_area && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].site_area.message}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor={`jobs.${index}.closing_hours`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Closing Hours</label>
+                  <label htmlFor={`jobs.${index}.to_area`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>To Area</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    {...register(`jobs.${index}.closing_hours` as const, { required: "Closing hours are required", min: 0 })}
+                    type="text"
+                    {...register(`jobs.${index}.to_area` as const)}
                     className={inputStyle}
+                    placeholder="Destination area (optional)"
                   />
-                  {errors.jobs?.[index]?.closing_hours && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].closing_hours.message}</p>}
+                  {errors.jobs?.[index]?.to_area && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].to_area.message}</p>}
                 </div>
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor={`jobs.${index}.site_area`} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Site Area</label>
-                <input
-                  type="text"
-                  {...register(`jobs.${index}.site_area` as const, { required: "Site area is required" })}
-                  className={inputStyle}
-                />
-                {errors.jobs?.[index]?.site_area && <p className="mt-1 text-sm text-red-600">{errors.jobs[index].site_area.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -388,9 +375,8 @@ export default function JobSubmitPage() {
                 date: watchDate,
                 customer: 0,
                 tractor: 0,
-                opening_hours: 0,
-                closing_hours: 0,
                 site_area: '',
+                to_area: '',
                 total_load: 0,
                 load_rate: 0,
                 load_amount: 0,
