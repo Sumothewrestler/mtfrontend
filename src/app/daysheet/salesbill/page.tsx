@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Sun, Moon, Search, FileTextIcon, X, Share2, Eye, EyeOff } from 'lucide-react'
@@ -44,23 +44,7 @@ export default function JobReport() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  useEffect(() => {
-    fetchJobs()
-  }, [])
-
-  const toggleDetails = (jobId: number) => {
-    setShowDetails(prev => ({
-      ...prev,
-      [jobId]: !prev[jobId]
-    }))
-  }
-
-  const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-')
-    return `${day}-${month}-${year}`
-  }
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -76,6 +60,22 @@ export default function JobReport() {
     } finally {
       setIsLoading(false)
     }
+  }, [fromDate, toDate])
+
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
+
+  const toggleDetails = (jobId: number) => {
+    setShowDetails(prev => ({
+      ...prev,
+      [jobId]: !prev[jobId]
+    }))
+  }
+
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-')
+    return `${day}-${month}-${year}`
   }
 
   const handleGenerateReport = (e: React.FormEvent) => {
