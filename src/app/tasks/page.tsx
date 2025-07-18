@@ -1,14 +1,23 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, Calendar, CheckCircle, Circle, Edit, Trash2, X } from 'lucide-react'
+import { Plus, Search, Calendar, CheckCircle, Circle, Edit, Trash2, X, Tag as TagIcon } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
+
+interface TaskTag {
+  id: number
+  name: string
+  created_at: string
+  updated_at: string
+}
 
 interface Task {
   id: number
   task_name: string
   status: 'Pending' | 'Done'
   due_date: string
+  task_tag?: number
+  task_tag_name?: string
   created_at: string
   completion_date: string | null
 }
@@ -23,27 +32,73 @@ interface TaskModalProps {
 
 function TaskModal({ isOpen, onClose, onSubmit, task, isEditing = false }: TaskModalProps) {
   const { isDarkMode } = useDarkMode()
+  const [taskTags, setTaskTags] = useState<TaskTag[]>([])
+  const [showNewTagForm, setShowNewTagForm] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
   const [formData, setFormData] = useState({
     task_name: '',
     due_date: '',
+    task_tag: undefined as number | undefined,
     status: 'Pending' as 'Pending' | 'Done'
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchTaskTags()
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (task && isEditing) {
       setFormData({
         task_name: task.task_name,
         due_date: task.due_date,
+        task_tag: task.task_tag,
         status: task.status
       })
     } else {
       setFormData({
         task_name: '',
         due_date: '',
+        task_tag: undefined,
         status: 'Pending'
       })
     }
   }, [task, isEditing, isOpen])
+
+  const fetchTaskTags = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`)
+      if (response.ok) {
+        const data = await response.json()
+        setTaskTags(data)
+      }
+    } catch (error) {
+      console.error('Error fetching task tags:', error)
+    }
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName.trim() })
+      })
+      
+      if (response.ok) {
+        const newTag = await response.json()
+        setTaskTags([...taskTags, newTag])
+        setFormData({ ...formData, task_tag: newTag.id })
+        setNewTagName('')
+        setShowNewTagForm(false)
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +110,7 @@ function TaskModal({ isOpen, onClose, onSubmit, task, isEditing = false }: TaskM
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl max-w-md w-full p-6`}>
+      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             {isEditing ? 'Edit Task' : 'Add New Task'}
@@ -79,6 +134,101 @@ function TaskModal({ isOpen, onClose, onSubmit, task, isEditing = false }: TaskM
               placeholder="Enter task name"
               required
             />
+          </div>
+
+          {/* Task Tags Section */}
+          <div>
+            <label className="block text-sm font-medium mb-2 flex items-center">
+              <TagIcon size={16} className="mr-1" />
+              Task Tag (Optional)
+            </label>
+            
+            {/* Tag Navigation */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {/* No Tag Option */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, task_tag: undefined })}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    formData.task_tag === undefined
+                      ? 'bg-gray-500 text-white'
+                      : isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  No Tag
+                </button>
+
+                {/* Existing Tags */}
+                {taskTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, task_tag: tag.id })}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.task_tag === tag.id
+                        ? 'bg-blue-600 text-white'
+                        : isDarkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+
+                {/* Add New Tag Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowNewTagForm(!showNewTagForm)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    showNewTagForm
+                      ? 'bg-green-600 text-white'
+                      : isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-dashed border-gray-500'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border border-dashed border-gray-400'
+                  } flex items-center`}
+                >
+                  <Plus size={14} className="mr-1" />
+                  Add New
+                </button>
+              </div>
+
+              {/* New Tag Creation Form */}
+              {showNewTagForm && (
+                <div className={`p-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="Enter tag name"
+                      className={`flex-1 px-3 py-2 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'} text-sm`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateTag}
+                      disabled={!newTagName.trim()}
+                      className="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-sm"
+                    >
+                      Create
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewTagForm(false)
+                        setNewTagName('')
+                      }}
+                      className={`px-3 py-2 rounded text-sm ${isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-300 hover:bg-gray-400'}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -309,9 +459,16 @@ export default function TasksPage() {
                       </button>
                       
                       <div className="flex-1">
-                        <h3 className={`text-lg font-semibold ${task.status === 'Done' ? 'line-through opacity-60' : ''}`}>
-                          {task.task_name}
-                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <h3 className={`text-lg font-semibold ${task.status === 'Done' ? 'line-through opacity-60' : ''}`}>
+                            {task.task_name}
+                          </h3>
+                          {task.task_tag_name && (
+                            <span className={`px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800`}>
+                              {task.task_tag_name}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                           <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusBgColor(task.status, task.due_date)} ${getStatusColor(task.status, task.due_date)}`}>

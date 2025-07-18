@@ -1,14 +1,17 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Sun, Moon, Search, FileTextIcon, X, Share2 } from 'lucide-react'
+import { ArrowLeft, Sun, Moon, Search, FileTextIcon, X, Share2, Eye, EyeOff } from 'lucide-react'
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type Job = {
   id: number
   date: string
   customer_name: string
+  site_area: string
+  to_area?: string
   total_load: number
   load_rate: number
   load_amount: number
@@ -18,15 +21,44 @@ type Job = {
 }
 
 export default function JobReport() {
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [jobs, setJobs] = useState<Job[]>([])
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const today = new Date().toISOString().split('T')[0]
+  const [fromDate, setFromDate] = useState(today)
+  const [toDate, setToDate] = useState(today)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBillPreview, setShowBillPreview] = useState(false)
   const [billImageUrl, setBillImageUrl] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showDetails, setShowDetails] = useState<{ [key: number]: boolean }>({})
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    fetchJobs()
+  }, [])
+
+  const toggleDetails = (jobId: number) => {
+    setShowDetails(prev => ({
+      ...prev,
+      [jobId]: !prev[jobId]
+    }))
+  }
+
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-')
+    return `${day}-${month}-${year}`
+  }
 
   const fetchJobs = async () => {
     setIsLoading(true)
@@ -60,7 +92,7 @@ export default function JobReport() {
 
     // Set canvas size
     canvas.width = 800
-    canvas.height = 600
+    canvas.height = 700 // Increased height to accommodate new fields
 
     // Set background
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
@@ -82,13 +114,13 @@ export default function JobReport() {
 
     ctx.font = '18px Arial'
     ctx.fillStyle = '#0284c7'
-    ctx.fillText('Google Pay Number: 9443225671', canvas.width / 2, 120)
+    ctx.fillText('Google Pay Number: 8903663666', canvas.width / 2, 120)
 
     // Draw job details
     ctx.textAlign = 'left'
     ctx.font = '16px Arial'
     ctx.fillStyle = '#0369a1'
-    ctx.fillText(`Date: ${job.date}`, 50, 160)
+    ctx.fillText(`Date: ${formatDate(job.date)}`, 50, 160)
     ctx.fillText('Customer Name:', 50, 190)
 
     // Bold customer name
@@ -96,8 +128,25 @@ export default function JobReport() {
     ctx.fillStyle = '#0284c7'
     ctx.fillText(job.customer_name, 170, 190)
 
+    // Add Site Area and To Area
+    ctx.font = '16px Arial'
+    ctx.fillStyle = '#0369a1'
+    ctx.fillText('Site Area:', 50, 220)
+    ctx.font = '14px Arial'
+    ctx.fillStyle = '#0284c7'
+    const siteAreaText = job.site_area || 'N/A'
+    ctx.fillText(siteAreaText, 130, 220)
+
+    ctx.font = '16px Arial'
+    ctx.fillStyle = '#0369a1'
+    ctx.fillText('To Area:', 50, 250)
+    ctx.font = '14px Arial'
+    ctx.fillStyle = '#0284c7'
+    const toAreaText = job.to_area || 'N/A'
+    ctx.fillText(toAreaText, 120, 250)
+
     // Draw table
-    const tableTop = 220
+    const tableTop = 280
     const rowHeight = 40
     const col1 = 50
     const col2 = 300
@@ -139,7 +188,30 @@ export default function JobReport() {
     ctx.font = '16px Arial'
     ctx.fillStyle = '#0369a1'
     ctx.fillText('Description:', 50, outstandingY + 50)
-    ctx.fillText(job.description, 50, outstandingY + 80)
+    
+    // Wrap description text if it's too long
+    const maxWidth = canvas.width - 100
+    const words = job.description.split(' ')
+    let line = ''
+    let y = outstandingY + 80
+    
+    ctx.font = '14px Arial'
+    ctx.fillStyle = '#0284c7'
+    
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' '
+      const metrics = ctx.measureText(testLine)
+      const testWidth = metrics.width
+      
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, 50, y)
+        line = words[n] + ' '
+        y += 20
+      } else {
+        line = testLine
+      }
+    }
+    ctx.fillText(line, 50, y)
 
     // Add decorative elements
     ctx.strokeStyle = '#0284c7'
@@ -193,7 +265,7 @@ export default function JobReport() {
             <h1 className="text-2xl font-bold">Job Report</h1>
           </div>
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
             aria-label="Toggle dark mode"
           >
@@ -251,42 +323,112 @@ export default function JobReport() {
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         ) : jobs.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className={`min-w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-lg overflow-hidden`}>
-              <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                <tr>
-                  <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-left">Customer Name</th>
-                  <th className="px-4 py-2 text-right">Total Load</th>
-                  <th className="px-4 py-2 text-right">Load Rate</th>
-                  <th className="px-4 py-2 text-right">Load Amount</th>
-                  <th className="px-4 py-2 text-left">Description</th>
-                  <th className="px-4 py-2 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job, index) => (
-                  <tr key={job.id} className={`${index % 2 === 0 ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-50') : ''}`}>
-                    <td className="px-4 py-2">{job.date}</td>
-                    <td className="px-4 py-2 font-bold">{job.customer_name}</td>
-                    <td className="px-4 py-2 text-right">{job.total_load}</td>
-                    <td className="px-4 py-2 text-right">{job.load_rate}</td>
-                    <td className="px-4 py-2 text-right">{job.load_amount}</td>
-                    <td className="px-4 py-2">{job.description}</td>
-                    <td className="px-4 py-2 text-center">
+          <>
+            {isMobile ? (
+              <div className="space-y-4">
+                {jobs.map((job) => (
+                  <div key={job.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg p-4 shadow-md`}>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {formatDate(job.date)}
+                          </span>
+                          <button
+                            onClick={() => toggleDetails(job.id)}
+                            className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                          >
+                            {showDetails[job.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        <h3 className="font-bold text-lg mb-1">{job.customer_name}</h3>
+                        <p className={`text-xl font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                          ₹{job.load_amount}
+                        </p>
+                      </div>
                       <button
                         onClick={() => generateSalesBill(job)}
-                        className={`p-2 rounded ${isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                        className={`ml-3 p-3 rounded-full ${isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white flex items-center`}
                         aria-label="Generate Sales Bill"
                       >
-                        <FileTextIcon size={16} />
+                        <FileTextIcon size={20} className="mr-1" />
+                        <span className="text-sm font-medium">Bill</span>
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                    
+                    {showDetails[job.id] && (
+                      <div className={`pt-3 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} space-y-2`}>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Site Area:</span>
+                            <p className="font-medium">{job.site_area}</p>
+                          </div>
+                          <div>
+                            <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>To Area:</span>
+                            <p className="font-medium">{job.to_area || '-'}</p>
+                          </div>
+                          <div>
+                            <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Load:</span>
+                            <p className="font-medium">{job.total_load}</p>
+                          </div>
+                          <div>
+                            <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Load Rate:</span>
+                            <p className="font-medium">{job.load_rate}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Description:</span>
+                          <p className="font-medium text-sm">{job.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className={`min-w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md rounded-lg overflow-hidden`}>
+                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <tr>
+                      <th className="px-4 py-2 text-left">Date</th>
+                      <th className="px-4 py-2 text-left">Customer Name</th>
+                      <th className="px-4 py-2 text-left">Site Area</th>
+                      <th className="px-4 py-2 text-left">To Area</th>
+                      <th className="px-4 py-2 text-right">Total Load</th>
+                      <th className="px-4 py-2 text-right">Load Rate</th>
+                      <th className="px-4 py-2 text-right">Load Amount</th>
+                      <th className="px-4 py-2 text-left">Description</th>
+                      <th className="px-4 py-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jobs.map((job, index) => (
+                      <tr key={job.id} className={`${index % 2 === 0 ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-50') : ''}`}>
+                        <td className="px-4 py-2">{job.date}</td>
+                        <td className="px-4 py-2 font-bold">{job.customer_name}</td>
+                        <td className="px-4 py-2">{job.site_area}</td>
+                        <td className="px-4 py-2">{job.to_area || '-'}</td>
+                        <td className="px-4 py-2 text-right">{job.total_load}</td>
+                        <td className="px-4 py-2 text-right">{job.load_rate}</td>
+                        <td className="px-4 py-2 text-right">₹{job.load_amount}</td>
+                        <td className="px-4 py-2">{job.description}</td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            onClick={() => generateSalesBill(job)}
+                            className={`p-2 rounded ${isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white flex items-center justify-center mx-auto`}
+                            aria-label="Generate Sales Bill"
+                          >
+                            <FileTextIcon size={16} className="mr-1" />
+                            <span className="text-sm">Bill</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         ) : (
           <p className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             No data available. Please select a date range and generate a report.
@@ -294,7 +436,6 @@ export default function JobReport() {
         )}
       </main>
 
-      {/* Bill Preview Modal */}
       {showBillPreview && billImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`bg-white p-4 rounded-lg shadow-lg ${isDarkMode ? 'dark:bg-gray-800' : ''}`}>
@@ -308,7 +449,7 @@ export default function JobReport() {
                 <X size={20} />
               </button>
             </div>
-            <Image src={billImageUrl} alt="Sales Bill" width={800} height={600} className="mb-4 max-w-full h-auto" />
+            <Image src={billImageUrl} alt="Sales Bill" width={800} height={700} className="mb-4 max-w-full h-auto" />
             <div className="flex justify-end space-x-2">
               <button
                 onClick={handleShareBill}
@@ -328,7 +469,6 @@ export default function JobReport() {
         </div>
       )}
 
-      {/* Hidden canvas for generating sales bill */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   )

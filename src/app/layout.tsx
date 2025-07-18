@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { DarkModeProvider } from '@/contexts/DarkModeContext'
 import BottomNav from '@/components/BottomNav'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'  // 👈 Add this
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -74,6 +75,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <DarkModeProvider>
+          <ServiceWorkerRegister /> {/* ✅ Register SW */}
           {children}
           <BottomNav />
         </DarkModeProvider>

@@ -12,13 +12,14 @@ interface Job {
   customer_name: string // Add this field for customer name
   tractor: number // Keep this as ID
   tractor_name: string // Add this field for tractor name
-  opening_hours: number
-  closing_hours: number
   site_area: string
+  to_area?: string // Optional field
   total_load: number
   load_rate: number
   load_amount: number
   description: string
+  outstanding_balance: number
+  outstanding_as_of: string
 }
 
 export default function JobViewPage() {
@@ -152,6 +153,7 @@ export default function JobViewPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tractor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Site Area</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">To Area</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Load</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Load Amount</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Description</th>
@@ -162,11 +164,12 @@ export default function JobViewPage() {
                 {jobs.map((job) => (
                   <tr key={job.id}>
                     <td className="px-6 py-4 whitespace-nowrap">{formatDate(job.date)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{job.customer_name}</td> {/* Use customer_name here */}
-                    <td className="px-6 py-4 whitespace-nowrap">{job.tractor_name}</td> {/* Use tractor_name here */}
+                    <td className="px-6 py-4 whitespace-nowrap">{job.customer_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{job.tractor_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{job.site_area}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{job.to_area || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{job.total_load}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{job.load_amount}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">₹{job.load_amount}</td>
                     <td className="px-6 py-4">
                       <div className="max-w-xs overflow-hidden overflow-ellipsis">{job.description}</div>
                     </td>

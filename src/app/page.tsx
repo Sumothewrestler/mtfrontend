@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { DollarSign, Moon, Sun, Circle, Clock, Plus, X } from 'lucide-react'
+import { DollarSign, Moon, Sun, Circle, Clock, Plus, X, Tag as TagIcon, Filter, BellRing, BellOff } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -10,11 +10,20 @@ interface DashboardData {
   last_7_days_avg_sales: number
 }
 
+interface TaskTag {
+  id: number
+  name: string
+  created_at: string
+  updated_at: string
+}
+
 interface Task {
   id: number
   task_name: string
   status: 'Pending' | 'Done'
   due_date: string
+  task_tag?: number
+  task_tag_name?: string
   created_at: string
   completion_date: string | null
 }
@@ -44,10 +53,18 @@ export default function Dashboard() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [showDateModal, setShowDateModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [taskTags, setTaskTags] = useState<TaskTag[]>([])
+  const [showNewTagForm, setShowNewTagForm] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
   const [newTask, setNewTask] = useState({
     task_name: '',
+    task_tag: undefined as number | undefined,
     due_date: new Date().toISOString().split('T')[0]
   })
+  const [tagFilter, setTagFilter] = useState<number | null>(null)
+  const [showTagFilter, setShowTagFilter] = useState(false)
+  const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null)
 
   const generalButtonContainers = [
     {
@@ -152,11 +169,83 @@ export default function Dashboard() {
         console.error('Error fetching cash bank accounts:', error);
       }
     };
+
+    const fetchTaskTags = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`)
+        if (response.ok) {
+          const data = await response.json()
+          setTaskTags(data)
+        }
+      } catch (error) {
+        console.error('Error fetching task tags:', error)
+      }
+    }
+
+    const fetchVapidPublicKey = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}vapid-public-key/`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch VAPID public key');
+        }
+        const data = await response.json();
+        setVapidPublicKey(data.publicKey);
+      } catch (error) {
+        console.error('Error fetching VAPID public key:', error);
+      }
+    };
   
     fetchDashboardData();
     fetchTaskData();
     fetchCashBankAccounts();
+    fetchTaskTags();
+    fetchVapidPublicKey();
+
+    // Check initial notification permission status
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
   }, []);
+
+  const refreshTaskTags = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`)
+      if (response.ok) {
+        const data = await response.json()
+        setTaskTags(data)
+      }
+    } catch (error) {
+      console.error('Error fetching task tags:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (showTaskModal) {
+      refreshTaskTags();
+    }
+  }, [showTaskModal]);
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName.trim() })
+      })
+      
+      if (response.ok) {
+        const newTagData = await response.json()
+        setTaskTags([...taskTags, newTagData])
+        setNewTask({ ...newTask, task_tag: newTagData.id })
+        setNewTagName('')
+        setShowNewTagForm(false)
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error)
+    }
+  }
 
   const handleToggleTaskStatus = async (taskId: number) => {
     try {
@@ -191,9 +280,12 @@ export default function Dashboard() {
       // Reset form and close modal
       setNewTask({
         task_name: '',
+        task_tag: undefined,
         due_date: new Date().toISOString().split('T')[0]
       });
       setShowTaskModal(false);
+      setShowNewTagForm(false);
+      setNewTagName('');
       
       // Refresh task data
       const taskResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/today/`);
@@ -243,15 +335,97 @@ export default function Dashboard() {
   };
 
   const getDisplayTasks = () => {
+    let tasks = []
+    
     if (currentTaskView === 'today') {
-      return taskData?.today_tasks.filter(task => task.status !== 'Done') || []
+      tasks = taskData?.today_tasks.filter(task => task.status !== 'Done') || []
+    } else {
+      // Filter out today's tasks from pending and sort old to new
+      const today = new Date().toISOString().split('T')[0]
+      tasks = taskData?.pending_tasks
+        .filter(task => task.due_date !== today)
+        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()) || []
     }
-    // Filter out today's tasks from pending and sort old to new
-    const today = new Date().toISOString().split('T')[0]
-    return taskData?.pending_tasks
-      .filter(task => task.due_date !== today)
-      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()) || []
+
+    // Apply tag filter if selected
+    if (tagFilter !== null) {
+      tasks = tasks.filter(task => task.task_tag === tagFilter)
+    }
+
+    return tasks
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showTagFilter) {
+        const target = event.target as Element
+        if (!target.closest('.relative')) {
+          setShowTagFilter(false)
+        }
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showTagFilter])
+
+  const subscribeToPush = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !vapidPublicKey) {
+      console.warn('Push notifications not supported or VAPID key not available.');
+      return;
+    }
+
+    try {
+      const permissionResult = await Notification.requestPermission();
+      setNotificationPermission(permissionResult); // Update permission state
+      if (permissionResult !== 'granted') {
+        console.warn('Notification permission not granted.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+
+      // Send subscription to your backend
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}subscriptions/push/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // You'll need an Authorization header here for authenticated users
+          // 'Authorization': `Bearer YOUR_AUTH_TOKEN_HERE` // Removed as per previous instruction for anonymous
+        },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      if (response.ok) {
+        console.log('Push subscription sent to backend successfully!');
+      } else {
+        console.error('Failed to send push subscription to backend.');
+      }
+
+    } catch (error) {
+      console.error('Error subscribing to push notifications:', error);
+    }
+  };
+
+  // Helper function for VAPID key conversion
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
   return (
     <div className={`flex flex-col min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
@@ -260,13 +434,36 @@ export default function Dashboard() {
           <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-purple-900'}`}>
             METRO TRANSPORTS
           </h1>
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
-            aria-label="Toggle dark mode"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center space-x-2">
+            {/* Notification Subscription Button */}
+            {notificationPermission === 'granted' ? (
+              <button
+                className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-green-300' : 'bg-gray-200 text-green-800'}`}
+                aria-label="Notifications enabled"
+                title="Notifications Enabled"
+              >
+                <BellRing size={20} />
+              </button>
+            ) : (
+              <button
+                onClick={subscribeToPush}
+                className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-red-300' : 'bg-gray-200 text-red-800'}`}
+                aria-label="Enable notifications"
+                title="Enable Notifications"
+                disabled={!vapidPublicKey} // Disable if VAPID key is not loaded yet
+              >
+                <BellOff size={20} />
+              </button>
+            )}
+
+            <button
+              onClick={toggleDarkMode}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-yellow-300' : 'bg-gray-200 text-gray-800'}`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -319,7 +516,7 @@ export default function Dashboard() {
           <>
             <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-4 mb-6`}>
               <div className="flex justify-between items-center mb-3">
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 items-center">
                   <button
                     onClick={() => setCurrentTaskView('today')}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -344,12 +541,72 @@ export default function Dashboard() {
                   >
                     Pending ({taskData?.pending_tasks.filter(task => task.due_date !== new Date().toISOString().split('T')[0]).length || 0})
                   </button>
+                  
+                  {/* Tag Filter Button */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowTagFilter(!showTagFilter)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        tagFilter !== null
+                          ? 'bg-purple-600 text-white'
+                          : isDarkMode
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      <Filter size={16} />
+                    </button>
+                    
+                    {/* Tag Filter Dropdown */}
+                    {showTagFilter && (
+                      <div className={`absolute top-full left-0 mt-1 z-20 rounded-lg shadow-lg border min-w-[120px] ${
+                        isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                      }`}>
+                        <div className="p-2 space-y-1">
+                          <button
+                            onClick={() => {
+                              setTagFilter(null)
+                              setShowTagFilter(false)
+                            }}
+                            className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
+                              tagFilter === null
+                                ? 'bg-blue-600 text-white'
+                                : isDarkMode
+                                ? 'hover:bg-gray-600'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            All Tags
+                          </button>
+                          {taskTags.map((tag) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => {
+                                setTagFilter(tag.id)
+                                setShowTagFilter(false)
+                              }}
+                              className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
+                                tagFilter === tag.id
+                                  ? 'bg-blue-600 text-white'
+                                  : isDarkMode
+                                  ? 'hover:bg-gray-600'
+                                  : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              {tag.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+                
+                {/* Updated New Button - Remove Plus icon */}
                 <button
                   onClick={() => setShowTaskModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm"
                 >
-                  <Plus size={16} className="mr-1" />
                   New
                 </button>
               </div>
@@ -372,7 +629,14 @@ export default function Dashboard() {
                           <Circle size={20} />
                         </button>
                         <div>
-                          <h4 className="font-medium text-sm">{task.task_name}</h4>
+                          <div className="flex items-center space-x-2">
+                            <h4 className="font-medium text-sm">{task.task_name}</h4>
+                            {task.task_tag_name && (
+                              <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                {task.task_tag_name}
+                              </span>
+                            )}
+                          </div>
                           <button
                             onClick={() => {
                               setSelectedTask(task);
@@ -579,14 +843,18 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* New Task Modal */}
+      {/* New Task Modal with Tags */}
       {showTaskModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md`}>
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">New Task</h3>
               <button
-                onClick={() => setShowTaskModal(false)}
+                onClick={() => {
+                  setShowTaskModal(false)
+                  setShowNewTagForm(false)
+                  setNewTagName('')
+                }}
                 className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               >
                 <X size={20} />
@@ -608,6 +876,100 @@ export default function Dashboard() {
                   placeholder="Enter task name..."
                 />
               </div>
+
+              {/* Task Tags Section */}
+              <div>
+                <label className="block text-sm font-medium mb-2 flex items-center">
+                  <TagIcon size={16} className="mr-1" />
+                  Task Tag (Optional)
+                </label>
+                
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {/* No Tag Option */}
+                    <button
+                      type="button"
+                      onClick={() => setNewTask({ ...newTask, task_tag: undefined })}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        newTask.task_tag === undefined
+                          ? 'bg-gray-500 text-white'
+                          : isDarkMode
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      No Tag
+                    </button>
+
+                    {/* Existing Tags */}
+                    {taskTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => setNewTask({ ...newTask, task_tag: tag.id })}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          newTask.task_tag === tag.id
+                            ? 'bg-blue-600 text-white'
+                            : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+
+                    {/* Add New Tag Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowNewTagForm(!showNewTagForm)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        showNewTagForm
+                          ? 'bg-green-600 text-white'
+                          : isDarkMode
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-dashed border-gray-500'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border border-dashed border-gray-400'
+                      } flex items-center`}
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Add New
+                    </button>
+                  </div>
+
+                  {/* New Tag Creation Form */}
+                  {showNewTagForm && (
+                    <div className={`p-3 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'}`}>
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          value={newTagName}
+                          onChange={(e) => setNewTagName(e.target.value)}
+                          placeholder="Enter tag name"
+                          className={`flex-1 px-3 py-2 rounded border ${isDarkMode ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'} text-sm`}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateTag}
+                          disabled={!newTagName.trim()}
+                          className="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-sm"
+                        >
+                          Create
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewTagForm(false)
+                            setNewTagName('')
+                          }}
+                          className={`px-3 py-2 rounded text-sm ${isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-300 hover:bg-gray-400'}`}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2">Due Date</label>
@@ -626,7 +988,11 @@ export default function Dashboard() {
             
             <div className="flex space-x-3 mt-6">
               <button
-                onClick={() => setShowTaskModal(false)}
+                onClick={() => {
+                  setShowTaskModal(false)
+                  setShowNewTagForm(false)
+                  setNewTagName('')
+                }}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium ${
                   isDarkMode 
                     ? 'bg-gray-700 hover:bg-gray-600' 
