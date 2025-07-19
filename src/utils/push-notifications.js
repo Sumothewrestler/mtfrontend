@@ -3,7 +3,16 @@
  * @returns {boolean} True if supported, false otherwise.
  */
 export function isPushSupported() {
-  return 'serviceWorker' in navigator && 'PushManager' in window;
+  const hasServiceWorker = 'serviceWorker' in navigator;
+  const hasPushManager = 'PushManager' in window;
+  
+  console.log('🔍 Push support check:', {
+    serviceWorker: hasServiceWorker,
+    pushManager: hasPushManager,
+    supported: hasServiceWorker && hasPushManager
+  });
+  
+  return hasServiceWorker && hasPushManager;
 }
 
 /**
@@ -26,7 +35,15 @@ export async function requestNotificationPermission() {
 export async function subscribeUserToPush(vapidPublicKey) {
   try {
     console.log('🔄 Waiting for service worker to be ready...');
-    const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+    
+    // Add timeout to prevent hanging indefinitely
+    const serviceWorkerRegistration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Service worker ready timeout after 10 seconds')), 10000)
+      )
+    ]);
+    
     console.log('✅ Service worker is ready:', serviceWorkerRegistration);
 
     console.log('🔍 Checking for existing subscription...');
@@ -170,6 +187,24 @@ export async function setupPushNotifications() {
       return false;
     }
     console.log('✅ Push notifications are supported');
+
+    // Check if any service workers are registered
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      console.log('📋 Service worker registrations found:', registrations.length);
+      
+      if (registrations.length === 0) {
+        console.error('❌ No service workers registered');
+        throw new Error('No service workers registered. Please refresh the page and try again.');
+      }
+      
+      registrations.forEach((reg, index) => {
+        console.log(`📋 Registration ${index + 1}:`, {
+          scope: reg.scope,
+          state: reg.active ? 'active' : 'inactive'
+        });
+      });
+    }
 
     // Request permission
     const permission = await requestNotificationPermission();

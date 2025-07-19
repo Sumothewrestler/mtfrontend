@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable service worker support
-  experimental: {
-    // This helps with service worker registration
-  },
   // Add headers for PWA support
   async headers() {
     return [
@@ -18,6 +14,10 @@ const nextConfig = {
             key: 'Service-Worker-Allowed',
             value: '/',
           },
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
         ],
       },
       {
@@ -27,7 +27,20 @@ const nextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=0, must-revalidate',
           },
+          {
+            key: 'Content-Type',
+            value: 'application/json; charset=utf-8',
+          },
         ],
+      },
+    ];
+  },
+  // Ensure static files are served correctly
+  async rewrites() {
+    return [
+      {
+        source: '/sw.js',
+        destination: '/sw.js',
       },
     ];
   },

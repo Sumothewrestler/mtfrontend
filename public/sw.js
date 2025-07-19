@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'metro-transports-v1';
+console.log('Service Worker script loaded');
 
 // Install event
 self.addEventListener('install', (event) => {
