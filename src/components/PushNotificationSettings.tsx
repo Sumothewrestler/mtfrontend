@@ -9,6 +9,7 @@ export default function PushNotificationSettings() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -30,15 +31,31 @@ export default function PushNotificationSettings() {
   }, []);
 
   const checkSubscriptionStatus = async () => {
+    setIsCheckingStatus(true);
     if ('serviceWorker' in navigator) {
       try {
+        console.log('🔍 Checking existing push subscription status...');
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
-        setIsSubscribed(!!subscription);
+        
+        if (subscription) {
+          console.log('✅ Found existing push subscription:', {
+            endpoint: subscription.endpoint.substring(0, 50) + '...',
+            keys: 'keys' in subscription && (subscription as { keys?: { p256dh: string; auth: string } }).keys ? 'Present' : 'Missing'
+          });
+          setIsSubscribed(true);
+        } else {
+          console.log('❌ No existing push subscription found');
+          setIsSubscribed(false);
+        }
       } catch (error) {
         console.error('Error checking subscription status:', error);
+        setIsSubscribed(false);
       }
+    } else {
+      setIsSubscribed(false);
     }
+    setIsCheckingStatus(false);
   };
 
   const handleEnableNotifications = async () => {
@@ -97,7 +114,7 @@ export default function PushNotificationSettings() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-white">
-              Status: {isSubscribed ? '✅ Enabled' : '🔕 Disabled'}
+              Status: {isCheckingStatus ? '🔄 Checking...' : isSubscribed ? '✅ Enabled' : '🔕 Disabled'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Permission: {permission}
@@ -105,7 +122,14 @@ export default function PushNotificationSettings() {
           </div>
           
           <div className="space-x-2">
-            {!isSubscribed ? (
+            {isCheckingStatus ? (
+              <button
+                disabled
+                className="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm"
+              >
+                Checking...
+              </button>
+            ) : !isSubscribed ? (
               <button
                 onClick={handleEnableNotifications}
                 disabled={isLoading}
