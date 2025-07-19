@@ -8,8 +8,7 @@ export default function TestPushNotification() {
   const sendTestNotification = async () => {
     setIsLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/test-push-notification/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}test-push-notification/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

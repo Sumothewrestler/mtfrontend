@@ -44,15 +44,23 @@ export async function subscribeUserToPush(vapidPublicKey) {
  * @returns {Promise<string>} The VAPID public key.
  */
 export async function getVapidPublicKey() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const response = await fetch(`${backendUrl}/api/vapid-public-key/`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch VAPID public key');
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}vapid-public-key/`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch VAPID public key: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.publicKey;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error fetching VAPID public key:', error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
   }
-  
-  const data = await response.json();
-  return data.publicKey;
 }
 
 /**
@@ -81,20 +89,35 @@ export function urlBase64ToUint8Array(vapidKey) {
  * @returns {Promise<Response>} The response from the server.
  */
 export async function sendSubscriptionToBackend(subscription) {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const response = await fetch(`${backendUrl}/api/push-subscriptions/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(subscription),
-  });
+  try {
+    // Convert PushSubscription to the format expected by backend
+    const subscriptionData = {
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth
+    };
 
-  if (!response.ok) {
-    throw new Error('Failed to send subscription to backend.');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}push-subscriptions/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(subscriptionData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to send subscription to backend: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error sending subscription to backend:', error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 /**
@@ -129,7 +152,11 @@ export async function setupPushNotifications() {
     console.log('✅ Push notifications setup complete');
     return true;
   } catch (error) {
-    console.error('❌ Push notification setup failed:', error);
+    if (error instanceof Error) {
+      console.error('❌ Push notification setup failed:', error.message);
+    } else {
+      console.error('❌ Push notification setup failed:', error);
+    }
     return false;
   }
-} 
+}

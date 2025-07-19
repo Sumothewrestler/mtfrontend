@@ -8,6 +8,7 @@ export default function PushNotificationSettings() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -17,6 +18,12 @@ export default function PushNotificationSettings() {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
+
+    // Set debug info
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 
+                      process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/', '') || 
+                      'https://mtreplit.onrender.com';
+    setDebugInfo(`Backend URL: ${backendUrl}`);
 
     // Check if user is already subscribed
     checkSubscriptionStatus();
@@ -121,6 +128,9 @@ export default function PushNotificationSettings() {
           <p>• Daily report reminders</p>
           <p>• Important system notifications</p>
           <p>• Task and deadline alerts</p>
+          <p className="mt-2 font-mono bg-gray-100 dark:bg-gray-700 p-1 rounded">
+            {debugInfo}
+          </p>
         </div>
       </div>
     </div>
