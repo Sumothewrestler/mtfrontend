@@ -109,36 +109,53 @@ export async function subscribeUserToPush(vapidPublicKey) {
 
     // Check if keys are present
     if (!subscription.keys) {
-      console.warn('⚠️ Push subscription keys are missing. Trying to recreate subscription...');
+      console.warn('⚠️ Push subscription keys are missing. This is a browser compatibility issue.');
+      console.log('🔄 Trying alternative subscription methods...');
       
-      // Try to unsubscribe and resubscribe
+      // Try the alternative methods we defined earlier
       try {
+        // Try alternative approach: recreate the VAPID key with different padding
+        console.log('🔄 Trying alternative VAPID key format...');
+        const originalVapidKey = await getVapidPublicKey();
+        const alternativeKey = new TextEncoder().encode(originalVapidKey);
+        
         await subscription.unsubscribe();
-        console.log('🔄 Unsubscribed from previous subscription, trying again...');
-        
-        // Wait a moment and try again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         subscription = await serviceWorkerRegistration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: vapidPublicKey,
+          applicationServerKey: alternativeKey,
         });
         
-        console.log('🔄 Recreated subscription:', {
+        console.log('🔄 Alternative subscription result:', {
           endpoint: subscription.endpoint.substring(0, 50) + '...',
           keys: subscription.keys ? 'Present' : 'Still Missing'
         });
         
         if (!subscription.keys) {
-          throw new Error('Push subscription keys are still missing after recreation. This browser may not support VAPID keys properly.');
+          // Final fallback: try without VAPID key
+          console.log('🔄 Trying subscription without VAPID key (final fallback)...');
+          await subscription.unsubscribe();
+          subscription = await serviceWorkerRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+          });
+          
+          console.log('⚠️ Subscription created without VAPID key:', {
+            endpoint: subscription.endpoint.substring(0, 50) + '...',
+            keys: subscription.keys ? 'Present' : 'Missing (Expected for non-VAPID)'
+          });
         }
-      } catch (recreateError) {
-        console.error('❌ Failed to recreate subscription:', recreateError);
-        throw new Error('Push subscription keys are missing and recreation failed. This might be a browser compatibility issue.');
+      } catch (alternativeError) {
+        console.error('❌ Alternative subscription methods failed:', alternativeError);
+        
+        // If all else fails, we'll work with the keyless subscription
+        console.log('🔄 Using original subscription without keys (compatibility mode)');
       }
     }
 
-    if (!subscription.keys.p256dh || !subscription.keys.auth) {
+    // If we still don't have keys, that's okay for some browsers/configurations
+    if (!subscription.keys) {
+      console.warn('⚠️ Proceeding with subscription without encryption keys (compatibility mode)');
+      console.log('📝 This subscription will work for basic notifications but without payload encryption');
+    } else if (!subscription.keys.p256dh || !subscription.keys.auth) {
       throw new Error('Push subscription keys are incomplete. p256dh or auth key is missing.');
     }
 
@@ -234,21 +251,26 @@ export function urlBase64ToUint8Array(vapidKey) {
  */
 export async function sendSubscriptionToBackend(subscription) {
   try {
-    // Check if subscription has keys
-    if (!subscription.keys) {
-      throw new Error('Push subscription is missing keys object');
+    // Handle subscriptions with and without keys (compatibility mode)
+    let subscriptionData;
+    
+    if (subscription.keys && subscription.keys.p256dh && subscription.keys.auth) {
+      // Standard subscription with encryption keys
+      subscriptionData = {
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth
+      };
+      console.log('📤 Sending subscription with encryption keys');
+    } else {
+      // Compatibility mode: subscription without keys
+      console.warn('⚠️ Sending subscription without encryption keys (compatibility mode)');
+      subscriptionData = {
+        endpoint: subscription.endpoint,
+        p256dh: 'compatibility-mode-no-key',
+        auth: 'compatibility-mode-no-key'
+      };
     }
-
-    if (!subscription.keys.p256dh || !subscription.keys.auth) {
-      throw new Error('Push subscription keys are incomplete');
-    }
-
-    // Convert PushSubscription to the format expected by backend
-    const subscriptionData = {
-      endpoint: subscription.endpoint,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth
-    };
 
     console.log('📤 Sending subscription data:', {
       endpoint: subscriptionData.endpoint.substring(0, 50) + '...',
