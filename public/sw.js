@@ -1,8 +1,8 @@
-// public/sw.js
-console.log('Service Worker script loaded');
+// Service Worker for Metro Transports Push Notifications
+console.log('Metro Transports Service Worker loaded');
 
 // Install event
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   console.log('Service Worker installing...');
   self.skipWaiting();
 });
@@ -21,7 +21,7 @@ self.addEventListener('push', function (event) {
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (e) {
+    } catch {
       data = { title: 'Notification', body: event.data.text() };
     }
   }

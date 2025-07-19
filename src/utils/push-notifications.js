@@ -59,15 +59,72 @@ export async function subscribeUserToPush(vapidPublicKey) {
     console.log('📝 No existing subscription found, creating new one...');
     console.log('🔑 Using application server key (length):', vapidPublicKey.length);
 
-    const subscription = await serviceWorkerRegistration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: vapidPublicKey,
-    });
+    // Try to subscribe with detailed error handling
+    let subscription;
+    try {
+      subscription = await serviceWorkerRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidPublicKey,
+      });
+    } catch (subscribeError) {
+      console.error('❌ Push subscription failed:', subscribeError);
+      
+      // Try alternative approach without applicationServerKey first, then with
+      console.log('🔄 Trying alternative subscription method...');
+      try {
+        subscription = await serviceWorkerRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+        });
+        console.log('⚠️ Subscription created without VAPID key (fallback method)');
+      } catch (fallbackError) {
+        console.error('❌ Fallback subscription also failed:', fallbackError);
+        throw new Error(`Push subscription failed: ${subscribeError.message}`);
+      }
+    }
 
     console.log('✅ New subscription created successfully:', {
       endpoint: subscription.endpoint.substring(0, 50) + '...',
-      keys: subscription.keys ? 'Present' : 'Missing'
+      keys: subscription.keys ? 'Present' : 'Missing',
+      keysDetail: subscription.keys ? {
+        p256dh: subscription.keys.p256dh ? 'Present' : 'Missing',
+        auth: subscription.keys.auth ? 'Present' : 'Missing'
+      } : 'Keys object is undefined'
     });
+
+    // Check if keys are present
+    if (!subscription.keys) {
+      console.warn('⚠️ Push subscription keys are missing. Trying to recreate subscription...');
+      
+      // Try to unsubscribe and resubscribe
+      try {
+        await subscription.unsubscribe();
+        console.log('🔄 Unsubscribed from previous subscription, trying again...');
+        
+        // Wait a moment and try again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        subscription = await serviceWorkerRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidPublicKey,
+        });
+        
+        console.log('🔄 Recreated subscription:', {
+          endpoint: subscription.endpoint.substring(0, 50) + '...',
+          keys: subscription.keys ? 'Present' : 'Still Missing'
+        });
+        
+        if (!subscription.keys) {
+          throw new Error('Push subscription keys are still missing after recreation. This browser may not support VAPID keys properly.');
+        }
+      } catch (recreateError) {
+        console.error('❌ Failed to recreate subscription:', recreateError);
+        throw new Error('Push subscription keys are missing and recreation failed. This might be a browser compatibility issue.');
+      }
+    }
+
+    if (!subscription.keys.p256dh || !subscription.keys.auth) {
+      throw new Error('Push subscription keys are incomplete. p256dh or auth key is missing.');
+    }
 
     return subscription;
   } catch (error) {
@@ -127,6 +184,15 @@ export function urlBase64ToUint8Array(vapidKey) {
  */
 export async function sendSubscriptionToBackend(subscription) {
   try {
+    // Check if subscription has keys
+    if (!subscription.keys) {
+      throw new Error('Push subscription is missing keys object');
+    }
+
+    if (!subscription.keys.p256dh || !subscription.keys.auth) {
+      throw new Error('Push subscription keys are incomplete');
+    }
+
     // Convert PushSubscription to the format expected by backend
     const subscriptionData = {
       endpoint: subscription.endpoint,
@@ -218,9 +284,19 @@ export async function setupPushNotifications() {
     console.log('📡 Fetching VAPID public key...');
     const vapidPublicKey = await getVapidPublicKey();
     console.log('✅ VAPID public key received:', vapidPublicKey.substring(0, 20) + '...');
+    console.log('🔍 Full VAPID key length:', vapidPublicKey.length);
+    console.log('🔍 VAPID key format check:', {
+      startsWithB: vapidPublicKey.startsWith('B'),
+      hasValidChars: /^[A-Za-z0-9_-]+$/.test(vapidPublicKey),
+      expectedLength: vapidPublicKey.length === 88 // Base64 encoded 65-byte key
+    });
     
     const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
-    console.log('✅ Application server key converted');
+    console.log('✅ Application server key converted:', {
+      length: applicationServerKey.length,
+      type: applicationServerKey.constructor.name,
+      firstBytes: Array.from(applicationServerKey.slice(0, 5))
+    });
 
     // Subscribe user to push notifications
     console.log('📝 Subscribing to push notifications...');
