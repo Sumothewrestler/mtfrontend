@@ -24,19 +24,39 @@ export async function requestNotificationPermission() {
  * @returns {Promise<PushSubscription>} The push subscription object.
  */
 export async function subscribeUserToPush(vapidPublicKey) {
-  const serviceWorkerRegistration = await navigator.serviceWorker.ready;
-  const existingSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+  try {
+    console.log('🔄 Waiting for service worker to be ready...');
+    const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+    console.log('✅ Service worker is ready:', serviceWorkerRegistration);
 
-  if (existingSubscription) {
-    return existingSubscription;
+    console.log('🔍 Checking for existing subscription...');
+    const existingSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+    if (existingSubscription) {
+      console.log('✅ Found existing subscription:', {
+        endpoint: existingSubscription.endpoint.substring(0, 50) + '...'
+      });
+      return existingSubscription;
+    }
+
+    console.log('📝 No existing subscription found, creating new one...');
+    console.log('🔑 Using application server key (length):', vapidPublicKey.length);
+
+    const subscription = await serviceWorkerRegistration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: vapidPublicKey,
+    });
+
+    console.log('✅ New subscription created successfully:', {
+      endpoint: subscription.endpoint.substring(0, 50) + '...',
+      keys: subscription.keys ? 'Present' : 'Missing'
+    });
+
+    return subscription;
+  } catch (error) {
+    console.error('❌ Error in subscribeUserToPush:', error);
+    throw error;
   }
-
-  const subscription = await serviceWorkerRegistration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: vapidPublicKey,
-  });
-
-  return subscription;
 }
 
 /**
