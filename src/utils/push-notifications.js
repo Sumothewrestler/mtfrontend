@@ -97,7 +97,16 @@ export async function sendSubscriptionToBackend(subscription) {
       auth: subscription.keys.auth
     };
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}push-subscriptions/`, {
+    console.log('📤 Sending subscription data:', {
+      endpoint: subscriptionData.endpoint.substring(0, 50) + '...',
+      p256dh: subscriptionData.p256dh ? 'Present' : 'Missing',
+      auth: subscriptionData.auth ? 'Present' : 'Missing'
+    });
+
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}push-subscriptions/`;
+    console.log('📡 POST URL:', url);
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,11 +114,18 @@ export async function sendSubscriptionToBackend(subscription) {
       body: JSON.stringify(subscriptionData),
     });
 
+    console.log('📥 Response status:', response.status);
+    console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`Failed to send subscription to backend: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ Error response body:', errorText);
+      throw new Error(`Failed to send subscription to backend: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    return response.json();
+    const responseData = await response.json();
+    console.log('✅ Backend response:', responseData);
+    return responseData;
   } catch (error) {
     if (error instanceof Error) {
       console.error('Error sending subscription to backend:', error.message);
@@ -126,11 +142,14 @@ export async function sendSubscriptionToBackend(subscription) {
  */
 export async function setupPushNotifications() {
   try {
+    console.log('🚀 Starting push notification setup...');
+    
     // Check if push notifications are supported
     if (!isPushSupported()) {
       console.warn('Push notifications are not supported');
       return false;
     }
+    console.log('✅ Push notifications are supported');
 
     // Request permission
     const permission = await requestNotificationPermission();
@@ -138,22 +157,35 @@ export async function setupPushNotifications() {
       console.warn('Push notification permission denied');
       return false;
     }
+    console.log('✅ Permission granted:', permission);
 
     // Get VAPID public key
+    console.log('📡 Fetching VAPID public key...');
     const vapidPublicKey = await getVapidPublicKey();
+    console.log('✅ VAPID public key received:', vapidPublicKey.substring(0, 20) + '...');
+    
     const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+    console.log('✅ Application server key converted');
 
     // Subscribe user to push notifications
+    console.log('📝 Subscribing to push notifications...');
     const subscription = await subscribeUserToPush(applicationServerKey);
+    console.log('✅ Push subscription created:', {
+      endpoint: subscription.endpoint.substring(0, 50) + '...',
+      keys: subscription.keys ? 'Present' : 'Missing'
+    });
 
     // Send subscription to backend
+    console.log('📤 Sending subscription to backend...');
     await sendSubscriptionToBackend(subscription);
+    console.log('✅ Subscription sent to backend successfully');
 
-    console.log('✅ Push notifications setup complete');
+    console.log('🎉 Push notifications setup complete!');
     return true;
   } catch (error) {
     if (error instanceof Error) {
       console.error('❌ Push notification setup failed:', error.message);
+      console.error('Stack trace:', error.stack);
     } else {
       console.error('❌ Push notification setup failed:', error);
     }
