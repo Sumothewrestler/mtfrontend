@@ -67,18 +67,34 @@ export async function subscribeUserToPush(vapidPublicKey) {
         applicationServerKey: vapidPublicKey,
       });
     } catch (subscribeError) {
-      console.error('❌ Push subscription failed:', subscribeError);
+      console.error('❌ Push subscription with VAPID failed:', subscribeError);
       
-      // Try alternative approach without applicationServerKey first, then with
-      console.log('🔄 Trying alternative subscription method...');
+      // Try alternative approach: recreate the VAPID key with different padding
+      console.log('🔄 Trying alternative VAPID key format...');
       try {
+        // Try with the original key without our conversion
+        const originalVapidKey = await getVapidPublicKey();
+        const alternativeKey = new TextEncoder().encode(originalVapidKey);
+        
         subscription = await serviceWorkerRegistration.pushManager.subscribe({
           userVisibleOnly: true,
+          applicationServerKey: alternativeKey,
         });
-        console.log('⚠️ Subscription created without VAPID key (fallback method)');
-      } catch (fallbackError) {
-        console.error('❌ Fallback subscription also failed:', fallbackError);
-        throw new Error(`Push subscription failed: ${subscribeError.message}`);
+        console.log('✅ Subscription created with alternative VAPID key format');
+      } catch (alternativeError) {
+        console.error('❌ Alternative VAPID format also failed:', alternativeError);
+        
+        // Final fallback: try without VAPID key (some browsers support this)
+        console.log('🔄 Trying subscription without VAPID key (final fallback)...');
+        try {
+          subscription = await serviceWorkerRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+          });
+          console.log('⚠️ Subscription created without VAPID key (fallback method)');
+        } catch (fallbackError) {
+          console.error('❌ All subscription methods failed:', fallbackError);
+          throw new Error(`Push subscription failed with all methods: ${subscribeError.message}`);
+        }
       }
     }
 
@@ -163,18 +179,52 @@ export async function getVapidPublicKey() {
  * @returns {Uint8Array} The key in Uint8Array format.
  */
 export function urlBase64ToUint8Array(vapidKey) {
-  const padding = '='.repeat((4 - vapidKey.length % 4) % 4);
-  const base64 = (vapidKey + padding)
+  // Handle the specific case where VAPID key is 87 characters (needs 1 padding)
+  let processedKey = vapidKey;
+  
+  // If the key is 87 characters, add one padding character
+  if (vapidKey.length === 87) {
+    processedKey = vapidKey + '=';
+    console.log('🔧 Added padding to 87-character VAPID key');
+  }
+  
+  // Add proper padding for base64 decoding
+  const padding = '='.repeat((4 - (processedKey.length % 4)) % 4);
+  const base64 = (processedKey + padding)
     .replace(/-/g, '+')
     .replace(/_/g, '/');
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  console.log('🔍 VAPID key conversion:', {
+    originalLength: vapidKey.length,
+    processedLength: processedKey.length,
+    paddingAdded: padding.length,
+    finalLength: base64.length,
+    base64Sample: base64.substring(0, 20) + '...'
+  });
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  try {
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    
+    console.log('✅ VAPID key converted successfully:', {
+      outputLength: outputArray.length,
+      expectedLength: 65,
+      isCorrectLength: outputArray.length === 65
+    });
+    
+    if (outputArray.length !== 65) {
+      throw new Error(`VAPID key should be 65 bytes, got ${outputArray.length} bytes`);
+    }
+    
+    return outputArray;
+  } catch (error) {
+    console.error('❌ VAPID key conversion failed:', error);
+    throw new Error(`Invalid VAPID key format: ${error.message}`);
   }
-  return outputArray;
 }
 
 /**
@@ -288,7 +338,9 @@ export async function setupPushNotifications() {
     console.log('🔍 VAPID key format check:', {
       startsWithB: vapidPublicKey.startsWith('B'),
       hasValidChars: /^[A-Za-z0-9_-]+$/.test(vapidPublicKey),
-      expectedLength: vapidPublicKey.length === 88 // Base64 encoded 65-byte key
+      actualLength: vapidPublicKey.length,
+      expectedLength: 88, // Base64 encoded 65-byte key
+      needsPadding: vapidPublicKey.length < 88
     });
     
     const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
