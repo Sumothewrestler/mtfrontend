@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, FileText, Database, Home } from 'lucide-react'
+import { Calendar, FileText, Database, Home, Settings } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -14,6 +14,7 @@ export default function BottomNav() {
     { title: 'Day Sheet', href: '/daysheet/daysheetmain', icon: Calendar },
     { title: 'Reports', href: '/reports', icon: FileText },
     { title: 'Masters', href: '/masters/mastermain', icon: Database },
+    { title: 'Settings', href: '/settings', icon: Settings },
   ]
 
   const isActive = (href: string) => {
