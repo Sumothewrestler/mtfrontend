@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 export default function TestPush() {
   useEffect(() => {
     // Define the test function
-    (window as any).testPushNotifications = async function() {
+    (window as Window & { testPushNotifications?: () => Promise<void> }).testPushNotifications = async function() {
       function log(message: string) {
         const output = document.getElementById('output')
         if (output) {
@@ -89,8 +89,9 @@ export default function TestPush() {
           log('⚠️ This will create a compatibility mode subscription that expires immediately')
         }
 
-      } catch (error: any) {
-        log('❌ Error: ' + error.message)
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        log('❌ Error: ' + errorMessage)
         console.error('Full error:', error)
       }
     }
@@ -102,7 +103,10 @@ export default function TestPush() {
       <p>This page tests if we can create valid push subscriptions with proper encryption keys.</p>
       
       <button 
-        onClick={() => (window as any).testPushNotifications()} 
+        onClick={() => {
+          const windowWithTest = window as Window & { testPushNotifications?: () => Promise<void> }
+          windowWithTest.testPushNotifications?.()
+        }} 
         style={{ 
           padding: '10px 20px', 
           fontSize: '16px', 
