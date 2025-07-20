@@ -15,6 +15,7 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react"
+import { useDarkMode } from '@/contexts/DarkModeContext'
 import Select from "react-select"
 import jsPDF from "jspdf"
 // Import the autoTable type
@@ -84,7 +85,7 @@ export default function CustomerLedger() {
   const [openingBalance, setOpeningBalance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [zoom, setZoom] = useState(100)
   const [isCardView, setIsCardView] = useState(true)
   const [expandedCells, setExpandedCells] = useState<{ [key: string]: boolean }>({})
@@ -323,7 +324,7 @@ export default function CustomerLedger() {
               <ZoomIn size={20} />
             </button>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={toggleDarkMode}
               className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 text-yellow-300" : "bg-gray-200 text-gray-800"}`}
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}

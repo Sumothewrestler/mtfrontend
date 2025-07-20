@@ -72,22 +72,22 @@ export default function Dashboard() {
       gradient: 'from-blue-500 via-purple-500 to-purple-600',
       buttons: [
         { title: 'Attendance', href: '/daysheet/attendance' },
-        { title: 'Follow Up', href: '/daysheet/followup' },
+        { title: 'Labour A/c', href: '/daysheet/employee' },
       ]
     },
     {
       title: 'Operations',
       gradient: 'from-emerald-400 via-teal-500 to-green-600',
       buttons: [
-        { title: 'Hour Reading', href: '/daysheet/tractor-hour' },
-        { title: 'Booking', href: '/daysheet/advancebooking' },
+        { title: 'General Accounts', href: '/daysheet/accounts' },
+        { title: 'Receipt & Payment', href: '/daysheet/accounts/payments' },
       ]
     },
     {
       title: 'Management',
       gradient: 'from-orange-400 via-amber-500 to-yellow-500',
       buttons: [
-        { title: 'Demand', href: '/daysheet/demand' },
+        { title: 'Follow Up', href: '/daysheet/followup' },
         { title: 'Daily Reports', href: '/reports/daily_reports' },
       ]
     }
@@ -106,15 +106,15 @@ export default function Dashboard() {
       title: 'Account Management',
       gradient: 'from-emerald-400 via-teal-500 to-green-600',
       buttons: [
-        { title: 'Labour A/c', href: '/daysheet/employee' },
-        { title: 'Accounts', href: '/daysheet/accounts' },
+        { title: 'Hour Reading', href: '/daysheet/tractor-hour' },
+        { title: 'Booking', href: '/daysheet/advancebooking' },
       ]
     },
     {
       title: 'Financial Operations',
       gradient: 'from-orange-400 via-amber-500 to-yellow-500',
       buttons: [
-        { title: 'Receipt & Payment', href: '/daysheet/accounts/payments' },
+        { title: 'Demand', href: '/daysheet/demand' },
         { title: 'Cash & Bank', href: '/daysheet/accounts/cash-bank' },
       ]
     },
@@ -194,7 +194,7 @@ export default function Dashboard() {
         console.error('Error fetching VAPID public key:', error);
       }
     };
-  
+
     fetchDashboardData();
     fetchTaskData();
     fetchCashBankAccounts();
@@ -227,14 +227,14 @@ export default function Dashboard() {
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return
-    
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}task-tags/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newTagName.trim() })
       })
-      
+
       if (response.ok) {
         const newTagData = await response.json()
         setTaskTags([...taskTags, newTagData])
@@ -253,7 +253,7 @@ export default function Dashboard() {
         method: 'PATCH'
       });
       if (!response.ok) throw new Error('Failed to toggle task status');
-      
+
       // Refresh task data
       const taskResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/today/`);
       if (taskResponse.ok) {
@@ -274,9 +274,9 @@ export default function Dashboard() {
         },
         body: JSON.stringify(newTask),
       });
-      
+
       if (!response.ok) throw new Error('Failed to create task');
-      
+
       // Reset form and close modal
       setNewTask({
         task_name: '',
@@ -286,7 +286,7 @@ export default function Dashboard() {
       setShowTaskModal(false);
       setShowNewTagForm(false);
       setNewTagName('');
-      
+
       // Refresh task data
       const taskResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/today/`);
       if (taskResponse.ok) {
@@ -300,7 +300,7 @@ export default function Dashboard() {
 
   const handleDateChange = async (newDate: string) => {
     if (!selectedTask) return;
-    
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/${selectedTask.id}/`, {
         method: 'PATCH',
@@ -309,12 +309,12 @@ export default function Dashboard() {
         },
         body: JSON.stringify({ due_date: newDate }),
       });
-      
+
       if (!response.ok) throw new Error('Failed to update task date');
-      
+
       setShowDateModal(false);
       setSelectedTask(null);
-      
+
       // Refresh task data
       const taskResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}tasks/today/`);
       if (taskResponse.ok) {
@@ -336,7 +336,7 @@ export default function Dashboard() {
 
   const getDisplayTasks = () => {
     let tasks = []
-    
+
     if (currentTaskView === 'today') {
       tasks = taskData?.today_tasks.filter(task => task.status !== 'Done') || []
     } else {
@@ -468,43 +468,40 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8">
-        
+
         {/* Main Tab Navigation */}
         <div className="mb-4">
           <div className="flex space-x-2">
             <button
               onClick={() => setActiveMainTab('today')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeMainTab === 'today'
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeMainTab === 'today'
                   ? 'bg-blue-600 text-white'
                   : isDarkMode
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
               Today
             </button>
             <button
               onClick={() => setActiveMainTab('cash-bank')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeMainTab === 'cash-bank'
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeMainTab === 'cash-bank'
                   ? 'bg-green-600 text-white'
                   : isDarkMode
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
               Cash Bank
             </button>
             <button
               onClick={() => setActiveMainTab('accounts')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeMainTab === 'accounts'
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeMainTab === 'accounts'
                   ? 'bg-purple-600 text-white'
                   : isDarkMode
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
               Accounts
             </button>
@@ -519,62 +516,57 @@ export default function Dashboard() {
                 <div className="flex space-x-2 items-center">
                   <button
                     onClick={() => setCurrentTaskView('today')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      currentTaskView === 'today'
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${currentTaskView === 'today'
                         ? 'bg-blue-600 text-white'
                         : isDarkMode
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     Today ({taskData?.today_tasks.filter(task => task.status !== 'Done').length || 0})
                   </button>
                   <button
                     onClick={() => setCurrentTaskView('pending')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      currentTaskView === 'pending'
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${currentTaskView === 'pending'
                         ? 'bg-orange-600 text-white'
                         : isDarkMode
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     Pending ({taskData?.pending_tasks.filter(task => task.due_date !== new Date().toISOString().split('T')[0]).length || 0})
                   </button>
-                  
+
                   {/* Tag Filter Button */}
                   <div className="relative">
                     <button
                       onClick={() => setShowTagFilter(!showTagFilter)}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        tagFilter !== null
+                      className={`p-1.5 rounded-lg transition-colors ${tagFilter !== null
                           ? 'bg-purple-600 text-white'
                           : isDarkMode
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       <Filter size={16} />
                     </button>
-                    
+
                     {/* Tag Filter Dropdown */}
                     {showTagFilter && (
-                      <div className={`absolute top-full left-0 mt-1 z-20 rounded-lg shadow-lg border min-w-[120px] ${
-                        isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                      }`}>
+                      <div className={`absolute top-full left-0 mt-1 z-20 rounded-lg shadow-lg border min-w-[120px] ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                        }`}>
                         <div className="p-2 space-y-1">
                           <button
                             onClick={() => {
                               setTagFilter(null)
                               setShowTagFilter(false)
                             }}
-                            className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
-                              tagFilter === null
+                            className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${tagFilter === null
                                 ? 'bg-blue-600 text-white'
                                 : isDarkMode
-                                ? 'hover:bg-gray-600'
-                                : 'hover:bg-gray-100'
-                            }`}
+                                  ? 'hover:bg-gray-600'
+                                  : 'hover:bg-gray-100'
+                              }`}
                           >
                             All Tags
                           </button>
@@ -585,13 +577,12 @@ export default function Dashboard() {
                                 setTagFilter(tag.id)
                                 setShowTagFilter(false)
                               }}
-                              className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
-                                tagFilter === tag.id
+                              className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${tagFilter === tag.id
                                   ? 'bg-blue-600 text-white'
                                   : isDarkMode
-                                  ? 'hover:bg-gray-600'
-                                  : 'hover:bg-gray-100'
-                              }`}
+                                    ? 'hover:bg-gray-600'
+                                    : 'hover:bg-gray-100'
+                                }`}
                             >
                               {tag.name}
                             </button>
@@ -601,7 +592,7 @@ export default function Dashboard() {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Updated New Button - Remove Plus icon */}
                 <button
                   onClick={() => setShowTaskModal(true)}
@@ -617,9 +608,8 @@ export default function Dashboard() {
                   getDisplayTasks().map((task) => (
                     <div
                       key={task.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                      }`}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <button
@@ -672,23 +662,20 @@ export default function Dashboard() {
                   .map((account) => (
                     <div
                       key={account.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                      }`}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                        }`}
                     >
                       <div>
                         <h4 className="font-medium text-sm">{account.name}</h4>
-                        <p className={`text-xs ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
                           {account.account_type}
                         </p>
                       </div>
-                      <div className={`text-right ${
-                        account.current_balance >= 0 
-                          ? 'text-green-600' 
+                      <div className={`text-right ${account.current_balance >= 0
+                          ? 'text-green-600'
                           : 'text-red-600'
-                      }`}>
+                        }`}>
                         <p className="font-semibold">
                           ₹ {Math.abs(account.current_balance).toFixed(2)}
                         </p>
@@ -721,31 +708,29 @@ export default function Dashboard() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setActiveSalesTab('today')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      activeSalesTab === 'today'
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeSalesTab === 'today'
                         ? 'bg-blue-600 text-white'
                         : isDarkMode
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     Today
                   </button>
                   <button
                     onClick={() => setActiveSalesTab('weekly')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      activeSalesTab === 'weekly'
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeSalesTab === 'weekly'
                         ? 'bg-green-600 text-white'
                         : isDarkMode
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                   >
                     Weekly
                   </button>
                 </div>
               </div>
-              
+
               <div className="text-center">
                 {activeSalesTab === 'today' ? (
                   <div>
@@ -773,25 +758,23 @@ export default function Dashboard() {
             <div className="flex space-x-2 mb-4">
               <button
                 onClick={() => setActiveTab('general')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'general'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'general'
                     ? 'bg-blue-600 text-white'
                     : isDarkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 General
               </button>
               <button
                 onClick={() => setActiveTab('accounts')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'accounts'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'accounts'
                     ? 'bg-green-600 text-white'
                     : isDarkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
               >
                 Accounts
               </button>
@@ -860,19 +843,18 @@ export default function Dashboard() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Task Name</label>
                 <input
                   type="text"
                   value={newTask.task_name}
-                  onChange={(e) => setNewTask({...newTask, task_name: e.target.value})}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  onChange={(e) => setNewTask({ ...newTask, task_name: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300'
-                  }`}
+                    }`}
                   placeholder="Enter task name..."
                 />
               </div>
@@ -883,20 +865,19 @@ export default function Dashboard() {
                   <TagIcon size={16} className="mr-1" />
                   Task Tag (Optional)
                 </label>
-                
+
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
                     {/* No Tag Option */}
                     <button
                       type="button"
                       onClick={() => setNewTask({ ...newTask, task_tag: undefined })}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        newTask.task_tag === undefined
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${newTask.task_tag === undefined
                           ? 'bg-gray-500 text-white'
                           : isDarkMode
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                     >
                       No Tag
                     </button>
@@ -907,13 +888,12 @@ export default function Dashboard() {
                         key={tag.id}
                         type="button"
                         onClick={() => setNewTask({ ...newTask, task_tag: tag.id })}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          newTask.task_tag === tag.id
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${newTask.task_tag === tag.id
                             ? 'bg-blue-600 text-white'
                             : isDarkMode
-                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
                       >
                         {tag.name}
                       </button>
@@ -923,13 +903,12 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setShowNewTagForm(!showNewTagForm)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        showNewTagForm
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showNewTagForm
                           ? 'bg-green-600 text-white'
                           : isDarkMode
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-dashed border-gray-500'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border border-dashed border-gray-400'
-                      } flex items-center`}
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-dashed border-gray-500'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border border-dashed border-gray-400'
+                        } flex items-center`}
                     >
                       <Plus size={14} className="mr-1" />
                       Add New
@@ -970,22 +949,21 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium mb-2">Due Date</label>
                 <input
                   type="date"
                   value={newTask.due_date}
-                  onChange={(e) => setNewTask({...newTask, due_date: e.target.value})}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300'
-                  }`}
+                    }`}
                 />
               </div>
             </div>
-            
+
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={() => {
@@ -993,11 +971,10 @@ export default function Dashboard() {
                   setShowNewTagForm(false)
                   setNewTagName('')
                 }}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${
-                  isDarkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600' 
+                className={`flex-1 py-2 px-4 rounded-lg font-medium ${isDarkMode
+                    ? 'bg-gray-700 hover:bg-gray-600'
                     : 'bg-gray-200 hover:bg-gray-300'
-                }`}
+                  }`}
               >
                 Cancel
               </button>
@@ -1029,7 +1006,7 @@ export default function Dashboard() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-500 mb-2">Task: {selectedTask.task_name}</p>
               <p className="text-xs text-gray-400 mb-4">
@@ -1043,24 +1020,22 @@ export default function Dashboard() {
                     handleDateChange(e.target.value);
                   }
                 }}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                className={`w-full px-3 py-2 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
-                }`}
+                  }`}
               />
             </div>
-            
+
             <button
               onClick={() => {
                 setShowDateModal(false);
                 setSelectedTask(null);
               }}
-              className={`w-full py-2 px-4 rounded-lg font-medium ${
-                isDarkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600' 
+              className={`w-full py-2 px-4 rounded-lg font-medium ${isDarkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
                   : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+                }`}
             >
               Cancel
             </button>

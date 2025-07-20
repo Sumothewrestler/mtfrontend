@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun, Banknote, Building2, X,} from 'lucide-react'
+import { ArrowLeft, Moon, Sun, X } from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 import Loading from '@/components/Loading'
 
@@ -308,180 +308,245 @@ export default function CashBanksManagement() {
           </div>
         ) : (
           <>
-            {/* Add Summary Section */}
+            {/* Summary Section */}
             <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 mb-8`}>
               <h2 className="text-lg font-semibold mb-4">Account Summary</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* Mobile View - Compact single line cards */}
+              <div className="md:hidden flex gap-3 mb-4">
+                <div className={`flex-1 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <h3 className="text-xs text-gray-500">Total Cash</h3>
+                  <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    ₹{formatCurrency(totalCashBalance)}
+                  </p>
+                </div>
+                <div className={`flex-1 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <h3 className="text-xs text-gray-500">Total Bank</h3>
+                  <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    ₹{formatCurrency(totalBankBalance)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Desktop View - Original layout with dropdown instead of Grand Total */}
+              <div className="hidden md:grid md:grid-cols-3 gap-4">
                 <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <h3 className="text-sm text-gray-500">Total Cash</h3>
-                  <p className={`text-xl font-bold ${totalCashBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     ₹{formatCurrency(totalCashBalance)}
                   </p>
                 </div>
                 <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <h3 className="text-sm text-gray-500">Total Bank</h3>
-                  <p className={`text-xl font-bold ${totalBankBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     ₹{formatCurrency(totalBankBalance)}
                   </p>
                 </div>
                 <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                  <h3 className="text-sm text-gray-500">Grand Total</h3>
-                  <p className={`text-xl font-bold ${(totalCashBalance + totalBankBalance) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{formatCurrency(totalCashBalance + totalBankBalance)}
-                  </p>
+                  <h3 className="text-sm text-gray-500 mb-2">Select Account</h3>
+                  <select
+                    value={selectedAccount || ''}
+                    onChange={(e) => setSelectedAccount(e.target.value ? parseInt(e.target.value) : null)}
+                    className={`w-full p-2 border rounded-md text-sm ${
+                      isDarkMode 
+                        ? 'bg-gray-600 border-gray-500 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="">All Accounts</option>
+                    {accounts
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(account => (
+                        <option key={account.id} value={account.id}>
+                          {account.name} ({account.account_type})
+                        </option>
+                      ))}
+                  </select>
                 </div>
+              </div>
+
+              {/* Mobile Account Dropdown */}
+              <div className="md:hidden">
+                <h3 className="text-sm text-gray-500 mb-2">Select Account</h3>
+                <select
+                  value={selectedAccount || ''}
+                  onChange={(e) => setSelectedAccount(e.target.value ? parseInt(e.target.value) : null)}
+                  className={`w-full p-3 border rounded-md ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                >
+                  <option value="">All Accounts</option>
+                  {accounts
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map(account => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} ({account.account_type})
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
 
-            {/* Accounts List */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-                  <h2 className="text-lg font-semibold mb-4">Accounts</h2>
-                  <div className="space-y-3">
-                    {accounts.map(account => (
+            {/* Transactions */}
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
+              {/* Mobile View - Compact Title and Date Range */}
+              <div className="md:hidden mb-4">
+                <h2 className="text-lg font-semibold mb-2">
+                  {selectedAccount ? 
+                    `Transactions - ${accounts.find(acc => acc.id === selectedAccount)?.name} (${accounts.find(acc => acc.id === selectedAccount)?.account_type})` : 
+                    'All Transactions'
+                  }
+                </h2>
+                <div className="flex space-x-2">
+                  <button
+                    className={`px-3 py-1 rounded text-sm ${
+                      dateRange === 'this-month'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => handleDateRangeChange('this-month')}
+                  >
+                    This Month
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded text-sm ${
+                      dateRange === 'last-month'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => handleDateRangeChange('last-month')}
+                  >
+                    Last Month
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded text-sm ${
+                      dateRange === 'custom'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => setShowDateRangePicker(true)}
+                  >
+                    Custom Range
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop View - Original Header */}
+              <div className="hidden md:flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">
+                  {selectedAccount ? 
+                    `Transactions - ${accounts.find(acc => acc.id === selectedAccount)?.name}` : 
+                    'All Transactions'
+                  }
+                </h2>
+                <div className="flex space-x-2">
+                  <button
+                    className={`px-4 py-2 rounded-md ${
+                      dateRange === 'this-month'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => handleDateRangeChange('this-month')}
+                  >
+                    This Month
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-md ${
+                      dateRange === 'last-month'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => handleDateRangeChange('last-month')}
+                  >
+                    Last Month
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-md ${
+                      dateRange === 'custom'
+                        ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    onClick={() => setShowDateRangePicker(true)}
+                  >
+                    Custom Range
+                  </button>
+                </div>
+              </div>
+
+              {transactions.length === 0 ? (
+                <div className={`p-8 text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                  No transactions found.
+                </div>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {transactions.map((transaction) => (
                       <div 
-                        key={account.id}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          selectedAccount === account.id
-                            ? isDarkMode ? 'bg-blue-900 border-blue-500' : 'bg-blue-50 border-blue-500'
-                            : isDarkMode ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
-                        onClick={() => setSelectedAccount(account.id)}
+                        key={transaction.id} 
+                        className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}
                       >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center">
-                              {account.account_type === 'Cash' ? 
-                                <Banknote size={16} className="mr-2 text-green-500" /> : 
-                                <Building2 size={16} className="mr-2 text-blue-500" />
-                              }
-                              <h3 className="font-medium">{account.name}</h3>
-                            </div>
-                            <p className="text-sm text-gray-500">{account.account_type}</p>
-                            <p className={`text-lg font-semibold ${
-                              account.current_balance >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              ₹{formatCurrency(account.current_balance)}
-                            </p>
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-sm font-medium">{new Date(transaction.date).toLocaleDateString()}</div>
+                          <div className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {transaction.transaction_type === 'Credit' ? '-' : ''}₹{parseFloat(transaction.amount).toFixed(2)}
                           </div>
                         </div>
+                        {!selectedAccount && (
+                          <div className="text-xs text-gray-500 mb-2">{transaction.account_name}</div>
+                        )}
+                        <div className={`text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{transaction.description}</div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
 
-              {/* Transactions */}
-              <div className="lg:col-span-2">
-                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">
-                      {selectedAccount ? 
-                        `Transactions - ${accounts.find(acc => acc.id === selectedAccount)?.name}` : 
-                        'All Transactions'
-                      }
-                    </h2>
-                    <div className="flex space-x-2">
-                      <button
-                        className={`px-4 py-2 rounded-md ${
-                          dateRange === 'this-month'
-                            ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                            : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        onClick={() => handleDateRangeChange('this-month')}
-                      >
-                        This Month
-                      </button>
-                      <button
-                        className={`px-4 py-2 rounded-md ${
-                          dateRange === 'last-month'
-                            ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                            : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        onClick={() => handleDateRangeChange('last-month')}
-                      >
-                        Last Month
-                      </button>
-                      <button
-                        className={`px-4 py-2 rounded-md ${
-                          dateRange === 'custom'
-                            ? isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                            : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        onClick={() => setShowDateRangePicker(true)}
-                      >
-                        Custom Range
-                      </button>
-                    </div>
-                  </div>
-
-                  {transactions.length === 0 ? (
-                    <div className={`p-8 text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                      No transactions found.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Date
-                            </th>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          {!selectedAccount && (
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Account
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Type
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Amount
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Running Balance
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Description
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y divide-gray-200`}>
-                          {transactions.map((transaction) => (
-                            <tr key={transaction.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                {new Date(transaction.date).toLocaleDateString()}
-                              </td>
+                          )}
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Amount
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Description
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y divide-gray-200`}>
+                        {transactions.map((transaction) => (
+                          <tr key={transaction.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </td>
+                            {!selectedAccount && (
                               <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 {transaction.account_name}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  transaction.transaction_type === 'Debit' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {transaction.transaction_type}
-                                </span>
-                              </td>
-                              <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                                transaction.transaction_type === 'Debit' ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.transaction_type === 'Debit' ? '+' : '-'}₹{parseFloat(transaction.amount).toFixed(2)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                ₹{parseFloat(transaction.running_balance).toFixed(2)}
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                {transaction.description}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
+                            )}
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {transaction.transaction_type === 'Credit' ? '-' : ''}₹{parseFloat(transaction.amount).toFixed(2)}
+                            </td>
+                            <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {transaction.description}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}

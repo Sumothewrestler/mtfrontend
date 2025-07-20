@@ -44,7 +44,7 @@ interface TransactionFormData {
 
 export default function TransactionEntryPage() {
   const { isDarkMode, toggleDarkMode } = useDarkMode()
-  
+
   // State for form data
   const [formData, setFormData] = useState<TransactionFormData>({
     date: new Date().toISOString().split('T')[0],
@@ -61,14 +61,14 @@ export default function TransactionEntryPage() {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [ledgers, setLedgers] = useState<Ledger[]>([])
   const [cashBankAccounts, setCashBankAccounts] = useState<CashBankAccount[]>([])
-  
+
   // State for modals
   const [showBusinessModal, setShowBusinessModal] = useState(false)
   const [showLedgerModal, setShowLedgerModal] = useState(false)
-  
+
   // State for new business form
   const [newBusinessName, setNewBusinessName] = useState('')
-  
+
   // State for new ledger form
   const [newLedgerData, setNewLedgerData] = useState({
     name: '',
@@ -78,7 +78,7 @@ export default function TransactionEntryPage() {
 
   // Loading and feedback states
   const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -245,7 +245,7 @@ export default function TransactionEntryPage() {
       if (response.ok) {
         await response.json()
         showMessage('success', 'Transaction created successfully!')
-        
+
         // Reset form
         setFormData({
           date: new Date().toISOString().split('T')[0],
@@ -259,10 +259,10 @@ export default function TransactionEntryPage() {
         })
       } else {
         const errorData = await response.json()
-        const errorMessage = errorData.errors 
-          ? (Array.isArray(Object.values(errorData.errors)[0]) 
-              ? (Object.values(errorData.errors)[0] as string[])[0] 
-              : String(Object.values(errorData.errors)[0]))
+        const errorMessage = errorData.errors
+          ? (Array.isArray(Object.values(errorData.errors)[0])
+            ? (Object.values(errorData.errors)[0] as string[])[0]
+            : String(Object.values(errorData.errors)[0]))
           : 'Error creating transaction'
         showMessage('error', errorMessage)
       }
@@ -279,7 +279,7 @@ export default function TransactionEntryPage() {
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               href="/"
               className={`${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
             >
@@ -301,14 +301,13 @@ export default function TransactionEntryPage() {
 
       {/* Main Content */}
       <main className="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8">
-        
+
         {/* Message Display */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
+          <div className={`mb-6 p-4 rounded-lg flex items-center ${message.type === 'success'
+              ? 'bg-green-100 text-green-800 border border-green-200'
               : 'bg-red-100 text-red-800 border border-red-200'
-          }`}>
+            }`}>
             {message.type === 'success' ? <CheckCircle size={20} className="mr-2" /> : <AlertCircle size={20} className="mr-2" />}
             {message.text}
           </div>
@@ -318,7 +317,7 @@ export default function TransactionEntryPage() {
         <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
+
             {/* Date */}
             <div>
               <label className="block text-sm font-medium mb-2 flex items-center">
@@ -329,11 +328,10 @@ export default function TransactionEntryPage() {
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                className={`w-full p-3 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
             </div>
 
@@ -347,11 +345,10 @@ export default function TransactionEntryPage() {
                 <select
                   value={formData.business}
                   onChange={(e) => handleInputChange('business', e.target.value ? parseInt(e.target.value) : '')}
-                  className={`flex-1 p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`flex-1 p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <option value="">Select Business</option>
                   {businesses.map((business) => (
@@ -381,11 +378,10 @@ export default function TransactionEntryPage() {
                   value={formData.ledger}
                   onChange={(e) => handleInputChange('ledger', e.target.value ? parseInt(e.target.value) : '')}
                   disabled={!formData.business}
-                  className={`flex-1 p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`flex-1 p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  } ${!formData.business ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${!formData.business ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <option value="">Select Ledger</option>
                   {ledgers.map((ledger) => (
@@ -403,13 +399,29 @@ export default function TransactionEntryPage() {
                     }
                   }}
                   disabled={!formData.business}
-                  className={`p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors ${
-                    !formData.business ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors ${!formData.business ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   <Plus size={16} />
                 </button>
               </div>
+            </div>
+
+            {/* Notes */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-2">
+                Notes
+              </label>
+              <textarea
+                value={formData.note}
+                onChange={(e) => handleInputChange('note', e.target.value)}
+                placeholder="Optional notes about this transaction..."
+                rows={3}
+                className={`w-full p-3 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+              />
             </div>
 
             {/* Amount */}
@@ -424,11 +436,10 @@ export default function TransactionEntryPage() {
                 value={formData.amount}
                 onChange={(e) => handleInputChange('amount', e.target.value)}
                 placeholder="0.00"
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                className={`w-full p-3 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
             </div>
 
@@ -440,31 +451,28 @@ export default function TransactionEntryPage() {
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => handleInputChange('status', 'Unpaid')}
-                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
-                    formData.status === 'Unpaid'
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${formData.status === 'Unpaid'
                       ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Unpaid
                 </button>
                 <button
                   onClick={() => handleInputChange('status', 'Partially Paid')}
-                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
-                    formData.status === 'Partially Paid'
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${formData.status === 'Partially Paid'
                       ? 'bg-gradient-to-r from-orange-200 to-amber-200 text-orange-800 shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Partial
                 </button>
                 <button
                   onClick={() => handleInputChange('status', 'Paid')}
-                  className={`py-2 px-4 rounded-lg font-medium transition-all ${
-                    formData.status === 'Paid'
+                  className={`py-2 px-4 rounded-lg font-medium transition-all ${formData.status === 'Paid'
                       ? 'bg-gradient-to-r from-emerald-200 to-green-200 text-emerald-800 shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Paid
                 </button>
@@ -485,11 +493,10 @@ export default function TransactionEntryPage() {
                   value={formData.paid_amount}
                   onChange={(e) => handleInputChange('paid_amount', e.target.value)}
                   placeholder="0.00"
-                  className={`w-full p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 />
               </div>
             )}
@@ -504,41 +511,23 @@ export default function TransactionEntryPage() {
                 <select
                   value={formData.payment_account}
                   onChange={(e) => handleInputChange('payment_account', e.target.value ? parseInt(e.target.value) : '')}
-                  className={`w-full p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <option value="">Select Account</option>
                   {cashBankAccounts.map((account) => (
                     <option key={account.id} value={account.id}>
-                      {account.name} ({account.account_type}) - ₹{typeof account.current_balance === 'number' 
-                      ? account.current_balance.toFixed(2)
-                      : parseFloat(account.current_balance).toFixed(2)}
+                      {account.name} ({account.account_type}) - ₹{typeof account.current_balance === 'number'
+                        ? account.current_balance.toFixed(2)
+                        : parseFloat(account.current_balance).toFixed(2)}
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* Notes */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-2">
-                Notes
-              </label>
-              <textarea
-                value={formData.note}
-                onChange={(e) => handleInputChange('note', e.target.value)}
-                placeholder="Optional notes about this transaction..."
-                rows={3}
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-            </div>
           </div>
 
           {/* Submit Button */}
@@ -546,11 +535,10 @@ export default function TransactionEntryPage() {
             <button
               onClick={handleSubmitTransaction}
               disabled={isLoading}
-              className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
-                isLoading
+              className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${isLoading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
+                }`}
             >
               {isLoading ? 'Creating Transaction...' : 'Create Transaction'}
             </button>
@@ -582,11 +570,10 @@ export default function TransactionEntryPage() {
                   value={newBusinessName}
                   onChange={(e) => setNewBusinessName(e.target.value)}
                   placeholder="Enter business name"
-                  className={`w-full p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateBusiness()}
                 />
               </div>
@@ -596,22 +583,20 @@ export default function TransactionEntryPage() {
                     setShowBusinessModal(false)
                     setNewBusinessName('')
                   }}
-                  className={`flex-1 py-2 px-4 rounded-lg border ${
-                    isDarkMode 
-                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                  className={`flex-1 py-2 px-4 rounded-lg border ${isDarkMode
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
                       : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateBusiness}
                   disabled={!newBusinessName.trim()}
-                  className={`flex-1 py-2 px-4 rounded-lg text-white ${
-                    newBusinessName.trim()
+                  className={`flex-1 py-2 px-4 rounded-lg text-white ${newBusinessName.trim()
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   Create
                 </button>
@@ -645,11 +630,10 @@ export default function TransactionEntryPage() {
                   value={newLedgerData.name}
                   onChange={(e) => setNewLedgerData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Office Rent, Sales Revenue, Loan to X"
-                  className={`w-full p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 />
               </div>
               <div>
@@ -657,11 +641,10 @@ export default function TransactionEntryPage() {
                 <select
                   value={newLedgerData.category}
                   onChange={(e) => setNewLedgerData(prev => ({ ...prev, category: e.target.value as 'Expense' | 'Income' | 'Others' }))}
-                  className={`w-full p-3 border rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full p-3 border rounded-lg ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <option value="Expense">Expense</option>
                   <option value="Income">Income</option>
@@ -674,22 +657,20 @@ export default function TransactionEntryPage() {
                     setShowLedgerModal(false)
                     setNewLedgerData({ name: '', category: 'Expense', business: '' })
                   }}
-                  className={`flex-1 py-2 px-4 rounded-lg border ${
-                    isDarkMode 
-                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                  className={`flex-1 py-2 px-4 rounded-lg border ${isDarkMode
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
                       : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateLedger}
                   disabled={!newLedgerData.name.trim() || !newLedgerData.business}
-                  className={`flex-1 py-2 px-4 rounded-lg text-white ${
-                    newLedgerData.name.trim() && newLedgerData.business
+                  className={`flex-1 py-2 px-4 rounded-lg text-white ${newLedgerData.name.trim() && newLedgerData.business
                       ? 'bg-green-600 hover:bg-green-700'
                       : 'bg-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   Create
                 </button>

@@ -8,6 +8,7 @@ import { useDarkMode } from '@/contexts/DarkModeContext'
 type AttendanceRecord = {
   date: string
   status: 'present' | 'absent' | 'half-day'
+  description: string
 }
 
 type EmployeeAttendance = {
@@ -27,6 +28,7 @@ type EmployeeAttendance = {
 type DailyStatus = {
   day: number
   status: string
+  description: string
 }
 
 type EmployeeMonthData = {
@@ -115,18 +117,20 @@ export default function AttendanceGridReport() {
     const daysInMonth = new Date(year, month, 0).getDate()
     
     const employees_data: EmployeeData[] = apiData.map(employeeData => {
-      // Create a map of date to status
-      const recordsMap = new Map<string, string>()
+      // Create a map of date to status and description
+      const recordsMap = new Map<string, {status: string, description: string}>()
       employeeData.records.forEach(record => {
         const recordDate = new Date(record.date)
         const day = recordDate.getDate()
-        recordsMap.set(day.toString(), record.status)
+        recordsMap.set(day.toString(), {status: record.status, description: record.description || ''})
       })
 
       // Build daily status array for all days in month
       const daily_status: DailyStatus[] = []
       for (let day = 1; day <= daysInMonth; day++) {
-        const status = recordsMap.get(day.toString()) || 'not_marked'
+        const recordData = recordsMap.get(day.toString())
+        const status = recordData?.status || 'not_marked'
+        const description = recordData?.description || ''
         let displayStatus = 'Not Marked'
         
         switch (status) {
@@ -145,7 +149,8 @@ export default function AttendanceGridReport() {
 
         daily_status.push({
           day,
-          status: displayStatus
+          status: displayStatus,
+          description
         })
       }
 
@@ -392,10 +397,15 @@ export default function AttendanceGridReport() {
                           <span className="font-bold text-xs sm:text-sm">{day.day}</span>
                         </div>
 
-                        {/* Compact Tooltip */}
+                        {/* Enhanced Tooltip with Description */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block z-20">
-                          <div className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                            Day {day.day}: {day.status}
+                          <div className="bg-black text-white text-xs rounded px-3 py-2 max-w-xs">
+                            <div className="font-semibold">Day {day.day}: {day.status}</div>
+                            {day.description && (
+                              <div className="mt-1 text-gray-300 whitespace-normal">
+                                {day.description}
+                              </div>
+                            )}
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-black"></div>
                           </div>
                         </div>

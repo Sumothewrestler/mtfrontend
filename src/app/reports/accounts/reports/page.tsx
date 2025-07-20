@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Moon, Sun, Building, FileText, Filter, Eye, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Moon, Sun, Building, FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 
@@ -23,11 +23,11 @@ interface Ledger {
 
 export default function LedgerReportsPage() {
   const { isDarkMode, toggleDarkMode } = useDarkMode()
-  
+
   // State for filters
   const [selectedBusiness, setSelectedBusiness] = useState<number | ''>('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  
+  const [selectedLedger, setSelectedLedger] = useState<string>('all')
+
   // State for data
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [ledgers, setLedgers] = useState<Ledger[]>([])
@@ -81,12 +81,15 @@ export default function LedgerReportsPage() {
       filtered = filtered.filter(ledger => ledger.business === selectedBusiness)
     }
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(ledger => ledger.category === selectedCategory)
+    if (selectedLedger !== 'all') {
+      filtered = filtered.filter(ledger => ledger.name === selectedLedger)
     }
 
+    // Sort ledgers A to Z
+    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name))
+
     setFilteredLedgers(filtered)
-  }, [ledgers, selectedBusiness, selectedCategory])
+  }, [ledgers, selectedBusiness, selectedLedger])
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -124,7 +127,7 @@ export default function LedgerReportsPage() {
 
   const clearFilters = () => {
     setSelectedBusiness('')
-    setSelectedCategory('all')
+    setSelectedLedger('all')
   }
 
   return (
@@ -147,15 +150,10 @@ export default function LedgerReportsPage() {
 
       {/* Main Content */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8">
-        
-        {/* Filters */}
-        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
-          <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <Filter className="mr-2" />
-            Filters
-          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        {/* Ledger Filter */}
+        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             {/* Business Filter */}
             <div>
               <label className="block text-sm font-medium mb-2 flex items-center">
@@ -165,11 +163,10 @@ export default function LedgerReportsPage() {
               <select
                 value={selectedBusiness}
                 onChange={(e) => setSelectedBusiness(e.target.value ? parseInt(e.target.value) : '')}
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                className={`w-full p-3 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
                 <option value="">All Businesses</option>
                 {businesses.map((business) => (
@@ -180,66 +177,40 @@ export default function LedgerReportsPage() {
               </select>
             </div>
 
-            {/* Category Filter */}
+            {/* Ledger Filter */}
             <div>
               <label className="block text-sm font-medium mb-2 flex items-center">
                 <FileText size={16} className="mr-1" />
-                Category
+                Ledger
               </label>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className={`w-full p-3 border rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                value={selectedLedger}
+                onChange={(e) => setSelectedLedger(e.target.value)}
+                className={`w-full p-3 border rounded-lg ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
-                <option value="all">All Categories</option>
-                <option value="Expense">Expense</option>
-                <option value="Income">Income</option>
-                <option value="Others">Others</option>
+                <option value="all">All Ledgers</option>
+                {ledgers
+                  .map(ledger => ledger.name)
+                  .filter((name, index, array) => array.indexOf(name) === index)
+                  .sort()
+                  .map((ledgerName) => (
+                    <option key={ledgerName} value={ledgerName}>
+                      {ledgerName}
+                    </option>
+                  ))}
               </select>
             </div>
-
-            {/* Clear Filters */}
-            <div>
-              <button
-                onClick={clearFilters}
-                className={`w-full p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                  isDarkMode 
-                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Clear Filters
-              </button>
-            </div>
           </div>
-
-          {/* Applied Filters Summary */}
-          {(selectedBusiness || selectedCategory !== 'all') && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-sm text-gray-600">Applied filters:</span>
-              {selectedBusiness && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  Business: {businesses.find(b => b.id === selectedBusiness)?.name}
-                </span>
-              )}
-              {selectedCategory !== 'all' && (
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                  Category: {selectedCategory}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Results Summary */}
         <div className="mb-6">
           <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Showing {filteredLedgers.length} ledger{filteredLedgers.length !== 1 ? 's' : ''} 
-            {selectedBusiness || selectedCategory !== 'all' ? ' (filtered)' : ''}
+            Showing {filteredLedgers.length} ledger{filteredLedgers.length !== 1 ? 's' : ''}
+            {selectedBusiness || selectedLedger !== 'all' ? ' (filtered)' : ''}
           </p>
         </div>
 
@@ -253,7 +224,7 @@ export default function LedgerReportsPage() {
             <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               No ledgers found matching your filters.
             </p>
-            {(selectedBusiness || selectedCategory !== 'all') && (
+            {(selectedBusiness || selectedLedger !== 'all') && (
               <button
                 onClick={clearFilters}
                 className="mt-2 text-blue-600 hover:text-blue-700 underline"
@@ -276,33 +247,28 @@ export default function LedgerReportsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {businessLedgers.map((ledger) => (
-                    <div 
-                      key={ledger.id} 
-                      className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-                        isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                      }`}
+                    <div
+                      key={ledger.id}
+                      className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                        }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center">
-                          {getCategoryIcon(ledger.category)}
-                          <h4 className="font-medium ml-2">{ledger.name}</h4>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            {getCategoryIcon(ledger.category)}
+                            <h4 className="font-medium ml-2">{ledger.name}</h4>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(ledger.category)}`}>
+                            {ledger.category_display}
+                          </span>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs border ${getCategoryColor(ledger.category)}`}>
-                          {ledger.category_display}
-                        </span>
+                        <Link
+                          href={`/reports/accounts/reports/ledger/${ledger.id}`}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs transition-colors ml-3"
+                        >
+                          View
+                        </Link>
                       </div>
-
-                      <div className="text-xs text-gray-500 mb-3">
-                        Created: {new Date(ledger.created_at).toLocaleDateString()}
-                      </div>
-
-                      <Link 
-                        href={`/reports/accounts/reports/ledger/${ledger.id}`}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center text-sm"
-                      >
-                        <Eye size={16} className="mr-2" />
-                        View Report
-                      </Link>
                     </div>
                   ))}
                 </div>

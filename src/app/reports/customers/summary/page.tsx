@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react"
+import { useDarkMode } from '@/contexts/DarkModeContext'
 
 type CustomerOutstanding = {
   customerName: string
@@ -37,7 +38,7 @@ export default function TotalCustomerOutstanding() {
   const [filteredData, setFilteredData] = useState<CustomerOutstanding[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [zoom, setZoom] = useState(100)
 
   // New state variables for the requested features
@@ -170,7 +171,7 @@ export default function TotalCustomerOutstanding() {
               <ZoomIn size={20} />
             </button>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={toggleDarkMode}
               className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 text-yellow-300" : "bg-gray-200 text-gray-800"}`}
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
