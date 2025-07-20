@@ -65,7 +65,7 @@ export default function Reports() {
       description: 'Financial reports and statements',
       actions: [
         { label: 'Sales', icon: TrendingUp, href: '/reports/accounts/sales' },
-        { label: 'Expense', icon: Receipt, href: '/reports/accounts/reports' },
+        { label: 'Ledgers', icon: Receipt, href: '/reports/accounts/reports' },
         { label: 'Cash Book', icon: BookOpen, href: '/reports/accounts/cash-book' },
         { label: 'EMI', icon: DollarSign, href: '/reports/accounts/emi' }
       ]

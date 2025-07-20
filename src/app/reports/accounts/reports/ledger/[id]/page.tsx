@@ -241,7 +241,7 @@ export default function LedgerDetailReportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Link
-              href="/accounts/reports"
+              href="/reports/accounts/reports"
               className={`mr-4 p-2 rounded-full hover:bg-gray-100 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
               <ArrowLeft size={20} />
