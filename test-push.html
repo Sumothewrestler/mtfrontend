@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Push Notification Test</title>
+</head>
+<body>
+    <h1>Push Notification Test</h1>
+    <button id="testBtn">Test Push Notifications</button>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            try {
+                // Request permission
+                const permission = await Notification.requestPermission();
+                log('Permission: ' + permission);
+                
+                if (permission !== 'granted') {
+                    log('❌ Permission denied');
+                    return;
+                }
+
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                log('✅ Service worker registered');
+
+                // Get VAPID key
+                const vapidResponse = await fetch('https://mtreplit.onrender.com/api/vapid-public-key/');
+                const vapidData = await vapidResponse.json();
+                log('✅ VAPID key received: ' + vapidData.publicKey.substring(0, 20) + '...');
+
+                // Convert VAPID key
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding)
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                }
+
+                // Subscribe
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey)
+                });
+
+                log('✅ Subscription created');
+                log('Endpoint: ' + subscription.endpoint.substring(0, 50) + '...');
+                log('Keys: ' + (subscription.keys ? 'Present' : 'Missing'));
+
+                if (subscription.keys) {
+                    log('P256DH: ' + subscription.keys.p256dh.substring(0, 20) + '...');
+                    log('Auth: ' + subscription.keys.auth.substring(0, 10) + '...');
+
+                    // Send to backend
+                    const backendResponse = await fetch('https://mtreplit.onrender.com/api/push-subscriptions/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            endpoint: subscription.endpoint,
+                            p256dh: subscription.keys.p256dh,
+                            auth: subscription.keys.auth
+                        })
+                    });
+
+                    if (backendResponse.ok) {
+                        log('✅ Subscription sent to backend successfully!');
+                        log('🎉 Now test the CRON job!');
+                    } else {
+                        log('❌ Failed to send to backend: ' + backendResponse.status);
+                    }
+                } else {
+                    log('❌ No encryption keys - FCM will not work');
+                }
+
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

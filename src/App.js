@@ -5,6 +5,7 @@ import {
   subscribeUserToPush,
   sendSubscriptionToBackend,
 } from './utils/push-notifications';
+import PushNotificationDebug from './components/PushNotificationDebug';
 
 function App() {
   useEffect(() => {
@@ -50,6 +51,7 @@ function App() {
     <div className="App">
       <h1>Push Notification Demo</h1>
       <p>Check the console for messages about push notification subscription.</p>
+      <PushNotificationDebug />
     </div>
   );
 }
