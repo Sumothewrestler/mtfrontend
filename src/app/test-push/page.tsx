@@ -57,11 +57,20 @@ export default function TestPush() {
 
         log('✅ Subscription created')
         log('Endpoint: ' + subscription.endpoint.substring(0, 50) + '...')
-        log('Keys: ' + (subscription.keys ? 'Present ✅' : 'Missing ❌'))
+        
+        // Type assertion to access keys property
+        const subscriptionWithKeys = subscription as PushSubscription & {
+          keys?: {
+            p256dh: string
+            auth: string
+          }
+        }
+        
+        log('Keys: ' + (subscriptionWithKeys.keys ? 'Present ✅' : 'Missing ❌'))
 
-        if (subscription.keys) {
-          log('P256DH: ' + subscription.keys.p256dh.substring(0, 20) + '...')
-          log('Auth: ' + subscription.keys.auth.substring(0, 10) + '...')
+        if (subscriptionWithKeys.keys) {
+          log('P256DH: ' + subscriptionWithKeys.keys.p256dh.substring(0, 20) + '...')
+          log('Auth: ' + subscriptionWithKeys.keys.auth.substring(0, 10) + '...')
 
           // Send to backend
           const backendResponse = await fetch('https://mtreplit.onrender.com/api/push-subscriptions/', {
@@ -71,8 +80,8 @@ export default function TestPush() {
             },
             body: JSON.stringify({
               endpoint: subscription.endpoint,
-              p256dh: subscription.keys.p256dh,
-              auth: subscription.keys.auth
+              p256dh: subscriptionWithKeys.keys.p256dh,
+              auth: subscriptionWithKeys.keys.auth
             })
           })
 
