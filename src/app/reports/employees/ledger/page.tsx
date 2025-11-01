@@ -586,7 +586,7 @@ export default function EmployeeLedgerReport() {
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[60vh] space-y-3">
-              {selectedDayTransactions.map((transaction, index) => (
+              {selectedDayTransactions.map((transaction) => (
                 <div 
                   key={transaction.id}
                   className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
