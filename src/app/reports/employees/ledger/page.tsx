@@ -430,13 +430,13 @@ export default function EmployeeLedgerReport() {
                   <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} flex justify-between items-center`}>
                     <div>
                       <p className="text-sm font-medium">Opening Balance</p>
-                      <p className={`text-lg font-bold ${getBalanceColor(ledgerData.opening_balance || 0)}`}>
+                      <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : getBalanceColor(ledgerData.opening_balance || 0)}`}>
                         {formatCurrency(ledgerData.opening_balance || 0)}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">Closing Balance</p>
-                      <p className={`text-lg font-bold ${getBalanceColor(ledgerData.closing_balance || 0)}`}>
+                      <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : getBalanceColor(ledgerData.closing_balance || 0)}`}>
                         {formatCurrency(ledgerData.closing_balance || 0)}
                       </p>
                     </div>
@@ -474,8 +474,8 @@ export default function EmployeeLedgerReport() {
                                   {Math.round(dailySummary.total_credit)}
                                 </span>
                               )}
-                              <span className={`font-medium text-xs ${getBalanceColor(dailySummary.closing_balance)}`}>
-                                Bal: {Math.round(dailySummary.closing_balance)}
+                              <span className={`font-medium text-xs ${isDarkMode ? 'text-white' : getBalanceColor(dailySummary.closing_balance)}`}>
+                                {Math.round(dailySummary.closing_balance)}
                               </span>
                             </div>
                           </div>
