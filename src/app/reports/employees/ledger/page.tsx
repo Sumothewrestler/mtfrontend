@@ -40,6 +40,7 @@ type DailyTransactionSummary = {
   date: string
   total_debit: number
   total_credit: number
+  closing_balance: number
   transactions: LedgerEntry[]
 }
 
@@ -174,12 +175,14 @@ export default function EmployeeLedgerReport() {
           date,
           total_debit: 0,
           total_credit: 0,
+          closing_balance: 0,
           transactions: []
         }
       }
       acc[date].total_debit += entry.debit
       acc[date].total_credit += entry.credit
       acc[date].transactions.push(entry)
+      acc[date].closing_balance = entry.balance
       return acc
     }, {} as Record<string, DailyTransactionSummary>)
 
@@ -460,9 +463,9 @@ export default function EmployeeLedgerReport() {
                             <span className="font-medium text-sm">
                               {formatCompactDate(dailySummary.date)}
                             </span>
-                            <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-3 text-sm">
                               {dailySummary.total_debit > 0 && (
-                                <span className="text-red-600 font-medium">
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-red-600'}`}>
                                   {Math.round(dailySummary.total_debit)}
                                 </span>
                               )}
@@ -471,6 +474,9 @@ export default function EmployeeLedgerReport() {
                                   {Math.round(dailySummary.total_credit)}
                                 </span>
                               )}
+                              <span className={`font-medium text-xs ${getBalanceColor(dailySummary.closing_balance)}`}>
+                                Bal: {Math.round(dailySummary.closing_balance)}
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -597,7 +603,7 @@ export default function EmployeeLedgerReport() {
                     </span>
                     <div className="text-sm font-medium">
                       {transaction.debit > 0 && (
-                        <span className="text-red-600">Dr: ₹{Math.round(transaction.debit)}</span>
+                        <span className={isDarkMode ? 'text-white' : 'text-red-600'}>Dr: ₹{Math.round(transaction.debit)}</span>
                       )}
                       {transaction.credit > 0 && (
                         <span className="text-green-600">Cr: ₹{Math.round(transaction.credit)}</span>
@@ -618,7 +624,7 @@ export default function EmployeeLedgerReport() {
             <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center`}>
               <div className="text-sm">
                 <span className="font-medium">Total: </span>
-                <span className="text-red-600 mr-3">
+                <span className={`mr-3 ${isDarkMode ? 'text-white' : 'text-red-600'}`}>
                   Dr: ₹{Math.round(selectedDayTransactions.reduce((sum, t) => sum + t.debit, 0))}
                 </span>
                 <span className="text-green-600">
