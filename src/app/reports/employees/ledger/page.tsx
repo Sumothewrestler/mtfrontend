@@ -610,11 +610,11 @@ export default function EmployeeLedgerReport() {
                       )}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <p className={`text-sm mb-2 ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>
                     {transaction.description}
                   </p>
                   <div className="text-right">
-                    <span className={`text-sm font-medium ${getBalanceColor(transaction.balance)}`}>
+                    <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : getBalanceColor(transaction.balance)}`}>
                       Balance: {formatCurrency(transaction.balance)}
                     </span>
                   </div>
