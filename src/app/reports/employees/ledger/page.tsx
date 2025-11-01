@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun, Eye, Calendar, User} from 'lucide-react'
+import { ArrowLeft, Moon, Sun, Eye, Calendar, User, List, Grid} from 'lucide-react'
 import { useDarkMode } from '@/contexts/DarkModeContext'
 import Loading from '@/components/Loading'
 
@@ -36,6 +36,13 @@ type EmployeeLedgerData = {
   ledger_entries: LedgerEntry[]
 }
 
+type DailyTransactionSummary = {
+  date: string
+  total_debit: number
+  total_credit: number
+  transactions: LedgerEntry[]
+}
+
 export default function EmployeeLedgerReport() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
@@ -49,6 +56,9 @@ export default function EmployeeLedgerReport() {
   const [error, setError] = useState<string | null>(null)
   const { isDarkMode, toggleDarkMode } = useDarkMode()
   const [showInactive, setShowInactive] = useState(false)
+  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('compact')
+  const [selectedDayTransactions, setSelectedDayTransactions] = useState<LedgerEntry[] | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   const fetchEmployeesSummary = useCallback(async () => {
     setIsLoading(true)
@@ -154,6 +164,39 @@ export default function EmployeeLedgerReport() {
     if (balance > 0) return 'text-red-600' // Employee is owed money
     if (balance < 0) return 'text-green-600' // Employee owes money
     return 'text-gray-600'
+  }
+
+  const groupTransactionsByDate = (entries: LedgerEntry[]): DailyTransactionSummary[] => {
+    const grouped = entries.reduce((acc, entry) => {
+      const date = entry.date
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          total_debit: 0,
+          total_credit: 0,
+          transactions: []
+        }
+      }
+      acc[date].total_debit += entry.debit
+      acc[date].total_credit += entry.credit
+      acc[date].transactions.push(entry)
+      return acc
+    }, {} as Record<string, DailyTransactionSummary>)
+
+    return Object.values(grouped).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }
+
+  const handleDayClick = (transactions: LedgerEntry[]) => {
+    setSelectedDayTransactions(transactions)
+    setShowModal(true)
+  }
+
+  const formatCompactDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
   }
 
   return (
@@ -328,11 +371,11 @@ export default function EmployeeLedgerReport() {
                       }`}
                     />
                   </div>
-                  <div className="md:col-span-2 flex items-end">
+                  <div className="md:col-span-2 flex gap-2 items-end">
                     <button
                       onClick={handleGenerateLedger}
                       disabled={isLedgerLoading || !fromDate || !toDate}
-                      className={`w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center ${
+                      className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center ${
                         isLedgerLoading || !fromDate || !toDate
                           ? 'bg-gray-400 cursor-not-allowed text-gray-200'
                           : 'bg-blue-600 hover:bg-blue-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
@@ -343,6 +386,36 @@ export default function EmployeeLedgerReport() {
                     </button>
                   </div>
                 </div>
+
+                {/* View Mode Toggle */}
+                {ledgerData && (
+                  <div className="mb-4 flex justify-center">
+                    <div className={`inline-flex rounded-lg p-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <button
+                        onClick={() => setViewMode('compact')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+                          viewMode === 'compact'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        <Grid className="mr-2" size={16} />
+                        Compact
+                      </button>
+                      <button
+                        onClick={() => setViewMode('detailed')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+                          viewMode === 'detailed'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        <List className="mr-2" size={16} />
+                        Detailed
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -373,86 +446,122 @@ export default function EmployeeLedgerReport() {
                   </div>
                 ) : (
                   <>
-                    {/* Desktop View */}
-                    <div className="hidden md:block overflow-x-auto">
-                      <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                          <tr>
-                            <th className="px-4 py-3 text-left font-medium">Date</th>
-                            <th className="px-4 py-3 text-left font-medium">Description</th>
-                            <th className="px-4 py-3 text-left font-medium">Type</th>
-                            <th className="px-4 py-3 text-right font-medium">Debit</th>
-                            <th className="px-4 py-3 text-right font-medium">Credit</th>
-                            <th className="px-4 py-3 text-right font-medium">Balance</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {ledgerData.ledger_entries.map(entry => (
-                            <tr key={entry.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
-                              <td className="px-4 py-3">{formatDate(entry.date)}</td>
-                              <td className="px-4 py-3 max-w-md">
-                                <div className="truncate" title={entry.description}>
-                                  {entry.description}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
-                                  {entry.transaction_type.replace('_', ' ')}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {entry.debit > 0 && (
-                                  <span className="text-red-600 font-medium">
-                                    {formatCurrency(entry.debit)}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {entry.credit > 0 && (
-                                  <span className="text-green-600 font-medium">
-                                    {formatCurrency(entry.credit)}
-                                  </span>
-                                )}
-                              </td>
-                              <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(entry.balance)}`}>
-                                {formatCurrency(entry.balance)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile View - Card Layout */}
-                    <div className="md:hidden space-y-2">
-                      {ledgerData.ledger_entries.map(entry => (
-                        <div 
-                          key={entry.id} 
-                          className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-3`}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="text-sm">{formatDate(entry.date)}</span>
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
-                              {entry.transaction_type.replace('_', ' ')}
+                    {/* Compact View */}
+                    {viewMode === 'compact' && (
+                      <div className="space-y-2">
+                        {groupTransactionsByDate(ledgerData.ledger_entries).map((dailySummary, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleDayClick(dailySummary.transactions)}
+                            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                              isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span className="font-medium text-sm">
+                              {formatCompactDate(dailySummary.date)}
                             </span>
-                          </div>
-                          <p className="text-sm mb-2 line-clamp-2">{entry.description}</p>
-                          <div className="flex justify-between items-center text-sm">
-                            <div>
-                              {entry.debit > 0 && (
-                                <span className="text-red-600 font-medium">Dr: {formatCurrency(entry.debit)}</span>
+                            <div className="flex items-center gap-4 text-sm">
+                              {dailySummary.total_debit > 0 && (
+                                <span className="text-red-600 font-medium">
+                                  {Math.round(dailySummary.total_debit)}
+                                </span>
                               )}
-                              {entry.credit > 0 && (
-                                <span className="text-green-600 font-medium">Cr: {formatCurrency(entry.credit)}</span>
+                              {dailySummary.total_credit > 0 && (
+                                <span className="text-green-600 font-medium">
+                                  {Math.round(dailySummary.total_credit)}
+                                </span>
                               )}
                             </div>
-                            <span className={`font-medium ${getBalanceColor(entry.balance)}`}>
-                              {formatCurrency(entry.balance)}
-                            </span>
                           </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Detailed View */}
+                    {viewMode === 'detailed' && (
+                      <>
+                        {/* Desktop View */}
+                        <div className="hidden md:block overflow-x-auto">
+                          <table className={`w-full text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                              <tr>
+                                <th className="px-4 py-3 text-left font-medium">Date</th>
+                                <th className="px-4 py-3 text-left font-medium">Description</th>
+                                <th className="px-4 py-3 text-left font-medium">Type</th>
+                                <th className="px-4 py-3 text-right font-medium">Debit</th>
+                                <th className="px-4 py-3 text-right font-medium">Credit</th>
+                                <th className="px-4 py-3 text-right font-medium">Balance</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {ledgerData.ledger_entries.map(entry => (
+                                <tr key={entry.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
+                                  <td className="px-4 py-3">{formatDate(entry.date)}</td>
+                                  <td className="px-4 py-3 max-w-md">
+                                    <div className="truncate" title={entry.description}>
+                                      {entry.description}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
+                                      {entry.transaction_type.replace('_', ' ')}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {entry.debit > 0 && (
+                                      <span className="text-red-600 font-medium">
+                                        {formatCurrency(entry.debit)}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {entry.credit > 0 && (
+                                      <span className="text-green-600 font-medium">
+                                        {formatCurrency(entry.credit)}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className={`px-4 py-3 text-right font-medium ${getBalanceColor(entry.balance)}`}>
+                                    {formatCurrency(entry.balance)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                      ))}
-                    </div>
+
+                        {/* Mobile View - Card Layout */}
+                        <div className="md:hidden space-y-2">
+                          {ledgerData.ledger_entries.map(entry => (
+                            <div 
+                              key={entry.id} 
+                              className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-3`}
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="text-sm">{formatDate(entry.date)}</span>
+                                <span className={`px-2 py-0.5 text-xs rounded-full ${getTransactionTypeColor(entry.transaction_type)}`}>
+                                  {entry.transaction_type.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <p className="text-sm mb-2 line-clamp-2">{entry.description}</p>
+                              <div className="flex justify-between items-center text-sm">
+                                <div>
+                                  {entry.debit > 0 && (
+                                    <span className="text-red-600 font-medium">Dr: {formatCurrency(entry.debit)}</span>
+                                  )}
+                                  {entry.credit > 0 && (
+                                    <span className="text-green-600 font-medium">Cr: {formatCurrency(entry.credit)}</span>
+                                  )}
+                                </div>
+                                <span className={`font-medium ${getBalanceColor(entry.balance)}`}>
+                                  {formatCurrency(entry.balance)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -460,6 +569,74 @@ export default function EmployeeLedgerReport() {
           </div>
         )}
       </main>
+
+      {/* Modal for Transaction Breakup */}
+      {showModal && selectedDayTransactions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden`}>
+            <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center`}>
+              <h3 className="text-lg font-semibold">
+                Transaction Details - {formatCompactDate(selectedDayTransactions[0].date)}
+              </h3>
+              <button
+                onClick={() => {setShowModal(false); setSelectedDayTransactions(null)}}
+                className={`text-2xl font-bold ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh] space-y-3">
+              {selectedDayTransactions.map((transaction, index) => (
+                <div 
+                  key={transaction.id}
+                  className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${getTransactionTypeColor(transaction.transaction_type)}`}>
+                      {transaction.transaction_type.replace('_', ' ')}
+                    </span>
+                    <div className="text-sm font-medium">
+                      {transaction.debit > 0 && (
+                        <span className="text-red-600">Dr: ₹{Math.round(transaction.debit)}</span>
+                      )}
+                      {transaction.credit > 0 && (
+                        <span className="text-green-600">Cr: ₹{Math.round(transaction.credit)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    {transaction.description}
+                  </p>
+                  <div className="text-right">
+                    <span className={`text-sm font-medium ${getBalanceColor(transaction.balance)}`}>
+                      Balance: {formatCurrency(transaction.balance)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center`}>
+              <div className="text-sm">
+                <span className="font-medium">Total: </span>
+                <span className="text-red-600 mr-3">
+                  Dr: ₹{Math.round(selectedDayTransactions.reduce((sum, t) => sum + t.debit, 0))}
+                </span>
+                <span className="text-green-600">
+                  Cr: ₹{Math.round(selectedDayTransactions.reduce((sum, t) => sum + t.credit, 0))}
+                </span>
+              </div>
+              <button
+                onClick={() => {setShowModal(false); setSelectedDayTransactions(null)}}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } transition-colors`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
